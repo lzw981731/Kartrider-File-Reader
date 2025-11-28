@@ -12,8 +12,6 @@ using System.Net;
 using RhoLoader.Update;
 using KartLibrary.IO;
 using KartLibrary.Game.Engine.Tontrollers;
-using KartLibrary.Game.Engine.Relements;
-using KartLibrary.Game.Engine.Properities;
 using KartLibrary.Game.Engine.Render;
 using System.Numerics;
 
@@ -27,9 +25,8 @@ namespace RhoLoader
         [STAThread]
         static void Main(string[] args)
         {
-            
             Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(true);
+            Application.SetCompatibleTextRenderingDefault(true); 
             Application.Run(new MainWindow());
         }
     }

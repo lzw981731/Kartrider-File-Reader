@@ -13,6 +13,10 @@ using KartCityStudio.Resources;
 using KartLibrary.Consts;
 using osu.Framework.Logging;
 using System;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Textures;
 
 namespace KartCityStudio.Game.Tests
 {
@@ -30,22 +34,21 @@ namespace KartCityStudio.Game.Tests
                 kartStorageSystemBuilder
                     .UseRho()
                     .UseRho5()
-                    //.UsePackFolderListFile()
-                    .SetDataPath(@"F:/game/KartRider/Data")
-                    .SetClientRegion(CountryCode.KR)
+                    .UsePackFolderListFile()
+                    .SetDataPath(@"")
+                    .SetClientRegion(CountryCode.CN)
                     .Build();
 
         }
 
         [BackgroundDependencyLoader]
-        private async Task load()
+        private void load()
         {
             Logger.Log("Initializing KartStorageSystem.");
             DateTime beginTime = DateTime.Now;
-            await Task.Run(() => storageSystem.Initialize());
+            storageSystem.Initialize();
             TimeSpan duration = DateTime.Now - beginTime;
-            Logger.Log($"Finsh Initialize KartStorageSystem. Spends {duration.TotalMilliseconds} ms.");
-
+            Logger.Log($"Initialized KartStorageSystem. Spends {duration.TotalMilliseconds} ms.");
         }
 
         protected override void LoadComplete()

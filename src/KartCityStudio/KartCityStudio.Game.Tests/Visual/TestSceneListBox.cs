@@ -25,6 +25,9 @@ namespace KartCityStudio.Game.Tests.Visual
                 for (int i = 0; i < 100; i++)
                     listbox.Items.Add(new ListBoxItem($"TestItem{listbox.Items.Count + 1}"));
             });
+            AddStep("Hide TestItem1.", () =>
+            {
+            });
             listbox.Items.Add(new ListBoxItem("TestItem1!"));
             listbox.Items.Add(new ListBoxItem("TestItem2!"));
         }

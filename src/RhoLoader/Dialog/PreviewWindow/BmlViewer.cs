@@ -10,49 +10,54 @@ using System.Windows.Forms;
 using KartLibrary.Xml;
 using System.IO;
 using System.Diagnostics;
+using KartCity.Common.Xml;
 using RhoLoader.XML;
 
 namespace RhoLoader.PreviewWindow
 {
-    public partial class bmlViewer : Form
+    public partial class BmlViewer : Form
     {
-        string ConvertedXml="";
-        string FileName = "";
-        byte[] data;
-        public bool Initized { get; set; } = false;
-        public bmlViewer(byte[] data,string FileName)
+        private string _rawXml = "";
+        private string _saveFileName = "";
+        
+        public BmlViewer()
         {
             InitializeComponent();
-            this.FileName = FileName;
-            this.data = data;
         }
 
-        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        public void LoadFromBml(string saveFileName, BinaryXmlTag bmlTag)
+        {
+            _saveFileName = saveFileName;
+            _rawXml = bmlTag.ToString();
+            
+            bmlTag.ApplyToRichTextBox(_richTextBox);
+        }
+        
+        public void LoadFromXml(string saveFileName, string xml)
+        {
+            _saveFileName = saveFileName;
+            _rawXml = xml;
+            
+            xml.StylizeXmlToRichText(_richTextBox);
+        }
+        
+        private void ActionSave(object sender, EventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "*.xml|XML File";
-            sfd.FileName = $"{FileName}.xml";
+            sfd.FileName = $"{_saveFileName}.xml";
             if(sfd.ShowDialog() == DialogResult.OK)
             {
                 FileStream fs = new FileStream(sfd.FileName, FileMode.Create);
-                byte[] data = Encoding.GetEncoding("UTF-16").GetBytes(ConvertedXml);
+                byte[] data = Encoding.GetEncoding("UTF-16").GetBytes(_rawXml);
                 fs.Write(data, 0, data.Length);
                 fs.Close();
             }
         }
 
-        private void bmlViewer_Load(object sender, EventArgs e)
+        private void ActionLoad(object sender, EventArgs e)
         {
-            BinaryXmlDocument bxd = new BinaryXmlDocument();
-            bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-            DateTime dt = DateTime.Now;
-            ConvertedXml = bxd.RootTag.ToString();
-            TimeSpan time1 = DateTime.Now - dt;
-            dt = DateTime.Now;
-            bxd.RootTag.ApplyToRichTextBox(richTextBox1);
-            richTextBox1.Select(0, 0);
-            TimeSpan time2 = DateTime.Now - dt;
-            Initized = true;
+            
         }
 
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)

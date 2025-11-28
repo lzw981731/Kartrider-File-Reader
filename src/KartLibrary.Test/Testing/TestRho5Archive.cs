@@ -1,11 +1,14 @@
 ﻿using KartLibrary.Consts;
 using KartLibrary.File;
-using KartLibrary.Tests.Command;
+using eP.Command;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using KartCity.Common.FileType;
 
 namespace KartLibrary.Tests.Testing
 {
@@ -19,7 +22,7 @@ namespace KartLibrary.Tests.Testing
 
         public TestRho5Archive()
         {
-            addStep("Regenerate Rho5Archive.", () =>
+            AddStep("Regenerate Rho5Archive.", () =>
             {
                 if(_rho5Archive is null)
                 {
@@ -58,15 +61,15 @@ namespace KartLibrary.Tests.Testing
                 {
                     return new CommandExecuteResult(ResultType.Failure, $"Cannot found path: {dataPackPath}.");
                 }
-                CountryCode clientRegionCC;
-                if(!Enum.TryParse<CountryCode>(clientRegion.ToUpper(), out clientRegionCC))
+                CountryCode clientCc;
+                if(!Enum.TryParse<CountryCode>(clientRegion.ToUpper(), out clientCc))
                 {
                     return new CommandExecuteResult(ResultType.Failure, $"Cannot found country code: {clientRegion.ToUpper()}");
                 }
                 _rho5Archive = new Rho5Archive();
-                _rho5Archive.Open(dataPackPath, dataPackName, clientRegionCC);
+                _rho5Archive.Open(dataPackPath, dataPackName, clientCc);
                 _rho5DataPackName = dataPackName;
-                _clientRegion = clientRegionCC;
+                _clientRegion = clientCc;
                 return new CommandExecuteResult(ResultType.Success, "");
             }
         }

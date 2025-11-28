@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using KartCity.Common.FileType;
 
 namespace KartLibrary.File
 {
@@ -32,6 +33,10 @@ namespace KartLibrary.File
 
         IModifiableRhoFolder? IModifiableRhoFile.Parent => Parent;
 
+        internal bool IsRhoFile => _sourceFile is RhoFile;
+        
+        internal bool IsRho5File => _sourceFile is Rho5File;
+        
         public string Name
         {
             get => _name;
@@ -64,8 +69,11 @@ namespace KartLibrary.File
 
         public bool HasDataSource => _sourceFile is not null ? _sourceFile.HasDataSource : _dataSource is not null;
 
+        public bool IsModified => _sourceFile is null or RhoFile { IsModified: true } or Rho5File { IsModified: true };
+        
         public IDataSource? DataSource
         {
+            internal get => _dataSource;
             set
             {
                 if (_sourceFile is not null)
@@ -95,6 +103,56 @@ namespace KartLibrary.File
         #endregion
 
         #region Methods
+
+        internal void ConvertToRhoFile()
+        {
+            if (_sourceFile is RhoFile)
+                return;
+            
+            if (_sourceFile is not null)
+                throw new InvalidOperationException("This KartStorageFile already has Rho5File source.");
+
+            RhoFile rhoFile = new RhoFile()
+            {
+                Name = Name,
+                DataSource = _dataSource
+            };
+
+            if (Name.Length >= 4)
+            {
+                string extension = Name[^4..];
+                rhoFile.FileEncryptionProperty = extension switch
+                {
+                    ".dds" or ".tga" => RhoFileProperty.None,
+                    ".ogg" => RhoFileProperty.PartialEncrypted,
+                    _ => RhoFileProperty.CompressedEncrypted
+                };
+            }
+
+            _sourceFile = rhoFile;
+            
+            _parentFolder?._sourceRhoFolder?.AddFile(rhoFile);
+        }
+        
+        internal void ConvertToRho5File()
+        {
+            if (_sourceFile is Rho5File)
+                return;
+            
+            if (_sourceFile is not null)
+                throw new InvalidOperationException("This KartStorageFile already has RhoFile source.");
+
+            Rho5File rhoFile = new Rho5File()
+            {
+                Name = Name,
+                DataSource = _dataSource
+            };
+
+            _sourceFile = rhoFile;
+            
+            _parentFolder?._sourceRho5Folder?.AddFile(rhoFile);
+        }
+        
         public Stream CreateStream()
         {
             if (_sourceFile is not null)
@@ -186,6 +244,23 @@ namespace KartLibrary.File
             }
         }
 
+        /// <summary>
+        /// Attach this <see cref="KartStorageFile"/> object to RhoFolder which is source folder of this file's parent.
+        /// </summary>
+        public void AttachToRhoFolder(RhoFileProperty? rhoFileProperty = null)
+        {
+            if(_parentFolder?._sourceRhoFolder is null)
+                throw new InvalidOperationException("The parent folder is not set or not attach to RhoFolder.");
+            
+            RhoFile newRhoFile = new RhoFile();
+            newRhoFile.DataSource = _dataSource;
+            newRhoFile.Name = _name;
+            newRhoFile.FileEncryptionProperty = rhoFileProperty ?? RhoFileProperty.Encrypted;
+            _parentFolder._sourceRhoFolder.AddFile(newRhoFile);
+            _sourceFile = newRhoFile;
+            _dataSource = null;
+        }
+        
         public void Dispose()
         {
             _parentFolder = null;
@@ -208,6 +283,8 @@ namespace KartLibrary.File
         {
             return $"KartStorageFile:{FullName}";
         }
+        
+        
         #endregion
     }
 }

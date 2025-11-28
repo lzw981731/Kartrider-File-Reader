@@ -2,28 +2,32 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWpf>true</UseWpf>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>24.2.31.3</Version>
+    <Version>25.12.31.2</Version>
     <SignAssembly>False</SignAssembly>
-    <AssemblyOriginatorKeyFile>C:\Users\xpoi5\Downloads\epstudio_cc\epstudio_cc.crt</AssemblyOriginatorKeyFile>
     <StartupObject>RhoLoader.Program</StartupObject>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <BaseOutputPath>bin</BaseOutputPath>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>portable</DebugType>
     <Optimize>False</Optimize>
     <FileAlignment>1024</FileAlignment>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Debug\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>
     <FileAlignment>1024</FileAlignment>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Release\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,11 +48,32 @@
     <None Remove="Resources\baseline_folder_black_18dp.png" />
     <None Remove="Resources\baseline_insert_drive_file_black_18dp.png" />
     <None Remove="Resources\ic_fluent_arrow_hook_up_left_24_filled.png" />
+    <None Update="Font\NotoSansTC-Medium.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Font\NotoSansTC-Regular.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Font\NotoSansCJKkr-Medium.otf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Font\NotoSansCJKkr-Bold.otf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Font\NotoSansSC-Medium.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Font\NotoSansKR-Medium.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Pfim" Version="0.10.2" />
+    <PackageReference Include="Pfim" Version="0.11.3" />
     <PackageReference Include="SharpZipLib" Version="1.4.0" />
   </ItemGroup>
 
@@ -63,7 +88,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="MainWindow.cs" />
-    <Compile Update="Dialog\PreviewWindow\KSVPreview.cs">
+    <Compile Update="Dialog\PreviewWindow\KsvPreview.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -76,12 +101,37 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Update="Dialog\PreviewWindow\TgaDDsViewer.cs">
+    <Compile Update="Dialog\PreviewWindow\ImageViewer.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialog\LoadingDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Controls\PreviewView\PreviewPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Dialog\TestWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Controls\MusicPlayer\MusicPlayer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Controls\PictureViewer\PictureViewer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Dialog\PreviewWindow\XmlViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Controls\PreviewPanel\XmlPreview.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Controls\PreviewPanel\ImagePreview.cs">
+      <SubType>UserControl</SubType>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KartCityStudioCommon\KartCityStudioCommon.csproj" />
     <ProjectReference Include="..\KartriderLibrary\KartLibrary.csproj" />
   </ItemGroup>
 
@@ -100,8 +150,6 @@
     <EmbeddedResource Include="Controls\DarkTreeView\Icons\relement_recamera.png" />
     <Resource Include="Resources\baseline_arrow_left_black_18dp.png" />
     <Resource Include="Resources\baseline_folder_black_18dp.png" />
-    <Resource Include="Resources\baseline_insert_drive_file_black_18dp.png" />
-	  <Resource Include="Resources\baseline_insert_drive_file_black_18dp.png" />
     <Resource Include="Resources\ic_fluent_arrow_hook_up_left_24_filled.png" />
   </ItemGroup>
 
@@ -138,8 +186,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\Services\" />
     <Folder Include="Update\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\baseline_insert_drive_file_black_18dp.png" />
   </ItemGroup>
 
 </Project>

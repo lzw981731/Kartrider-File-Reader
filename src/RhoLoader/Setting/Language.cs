@@ -101,15 +101,9 @@ namespace RhoLoader.Setting
             return sb(str);
         }
 
-        public static string GetLangFont()
+        public static Font GetLangFontWithBase(Font baseFont)
         {
-            string Font_name = nowLang.GetFontName();
-            return Font_name;
-        }
-
-        public static Font GetLangFontWithBase(Font base_font)
-        {
-            return nowLang.GetLangFontWithBase(base_font);
+            return nowLang.GetLangFontWithBase(baseFont);
         }
     }
 
@@ -123,45 +117,36 @@ namespace RhoLoader.Setting
 
         public StringBag[] StringBags;
 
-        public bool ContainStringBag(string Name)
+        public bool ContainStringBag(string name)
         {
-            return Array.Exists(StringBags, x => x.Name == Name);
+            return Array.Exists(StringBags, x => x.Name == name);
         }
 
-        public string GetStringBag(string Name)
+        public string GetStringBag(string name)
         {
-            StringBag sb = Array.Find(StringBags, x => x.Name == Name);
+            StringBag sb = Array.Find(StringBags, x => x.Name == name);
             if (sb is null)
-                return $"!sb({Name})";
+                return $"!sb({name})";
             return sb.Value;
         }
 
-        public string GetFontName()
+        public FontFamily? GetFontFamily()
         {
-            string outFont = "";
-            foreach (string sub_font in Font)
+            foreach (string fontName in Font)
             {
-                try
-                {
-                    FontFamily fm = new FontFamily(sub_font);
-                    outFont = sub_font;
-                    break;
-                }
-                catch
-                {
-
-                }
+                FontFamily? fontFamily = FontManager.TryGetFontFamily(fontName);
+                if(fontFamily is not null)
+                    return fontFamily;
             }
-            return outFont;
+            return null;
         }
 
-        public Font GetLangFontWithBase(Font base_font)
+        public Font GetLangFontWithBase(Font baseFont)
         {
-            string Font_name = GetFontName();
-            if (Font_name == "")
-                return base_font;
-            FontFamily fm = new FontFamily(Font_name);
-            return new Font(fm, base_font.Size, base_font.Style);
+            FontFamily? fontFamily = GetFontFamily();
+            if (fontFamily is null)
+                return baseFont;
+            return new Font(fontFamily, baseFont.Size, baseFont.Style);
         }
     }
 

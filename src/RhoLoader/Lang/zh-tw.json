@@ -1,12 +1,12 @@
 {
   "LanguageName": "zh-tw",
-  "DisplayName": "正體中文",
+  "DisplayName": "繁體中文",
   "Author": "eP Studio",
-  "Font": [ "Microsoft JhengHei UI" ],
+  "Font": [ "Noto Sans TC Medium", "Microsoft JhengHei UI" ],
   "StringBags": [
     {
       "Name": "title",
-      "Value": "Rho載入器"
+      "Value": "KartCityLite"
     },
     {
       "Name": "menu_file",
@@ -17,8 +17,12 @@
       "Value": "開啟"
     },
     {
-      "Name": "menu_openFolder",
-      "Value": "開啟整個Data資料夾"
+      "Name": "menu_openFolderKr",
+      "Value": "開啟跑跑Data資料夾"
+    },
+    {
+      "Name": "menu_openFolderRc",
+      "Value": "開啟光速Data資料夾"
     },
     {
       "Name": "menu_exit",
@@ -133,8 +137,8 @@
       "Value": "發生錯誤，請稍後再試。"
     },
     {
-      "Name": "msg_PlzOpenRhoFileFirst",
-      "Value": "請先開啟Rho檔案，方可進行本操作。"
+      "Name": "msg_PlzOpenFileFirst",
+      "Value": "請先開啟檔案，方可進行本操作。"
     },
     {
       "Name": "msg_cancelExtract",

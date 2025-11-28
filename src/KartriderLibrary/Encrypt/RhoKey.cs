@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using System.IO;
 using KartLibrary.IO;
 using System.Reflection;
+using KartCity.Common.IO;
 using KartLibrary.File;
 
 namespace KartLibrary.Encrypt
 {
     public static class RhoKey
     {
-        private static uint[,] EncryptVectors =
+        private static readonly uint[,] EncryptVectors =
         {
             {
                 0x299c0f16, 0xf78cf0c1, 0x28f7d164, 0x4f4a1241, 0xe96b0b81, 0xaffa5fc0, 0xf4ab1829, 0x14670a1a,
@@ -159,36 +160,15 @@ namespace KartLibrary.Encrypt
             return Adler.Adler32(0, stringData, 0, stringData.Length) - 0xa6ee7565;
         }
 
-        public static uint GetJmdKey(string FileName)
-        {
-            byte[] stringData = Encoding.GetEncoding("UTF-16").GetBytes(FileName);
-            return Adler.Adler32(0, stringData, 0, stringData.Length) + 0x3de90dc3;
-        }
-
         public static uint GetBlockFirstKey(uint RhoKey)
         {
             return RhoKey ^ 0x3A9213AC;
         }
-
-
+        
 
         public static uint GetDirectoryDataKey(uint RhoKey)
         {
             return RhoKey + 0x2593A9F1;
-        }
-
-        public static uint GetJmdDirectoryDataKey(uint RhoKey)
-        {
-            return RhoKey - 0x41014EBF;
-        }
-
-        public static uint GetDataKey(uint RhoKey,RhoFileInfo fileInfo)
-        {
-            byte[] strData = Encoding.GetEncoding("UTF-16").GetBytes(fileInfo.Name);
-            uint key = Adler.Adler32(0, strData, 0, strData.Length);
-            key += (uint)fileInfo.ExtNum;
-            key += (RhoKey - 0x756DE654);
-            return key;
         }
 
         public static uint GetFileKey(uint RhoKey, string fileName, uint extNum)
@@ -197,15 +177,6 @@ namespace KartLibrary.Encrypt
             uint key = Adler.Adler32(0, strData, 0, strData.Length);
             key += extNum;
             key += (RhoKey - 0x756DE654);
-            return key;
-        }
-
-        public static uint GetJmdDataKey(uint RhoKey, RhoFileInfo fileInfo)
-        {
-            byte[] strData = Encoding.GetEncoding("UTF-16").GetBytes(fileInfo.Name);
-            uint key = Adler.Adler32(0, strData, 0, strData.Length);
-            key += (uint)fileInfo.ExtNum;
-            key += (RhoKey - 0x7E2AF33D);
             return key;
         }
 
@@ -231,22 +202,6 @@ namespace KartLibrary.Encrypt
             for (int i = 0; i < 4; i++)
             {
                 output ^= EncryptVectors[i, (value >> (i << 3)) & 0xFF];
-            }
-            return output;
-        }
-
-        /*Rho5test func*/
-        public static byte[] getKey(string filename,string anotherData)
-        {
-            filename = filename.ToLower();
-            string newStr = $"{filename}{anotherData}";
-            byte[] data = Encoding.GetEncoding("UTF-16").GetBytes(newStr);
-            byte[] output = new byte[0x80];
-            int readsCount = data.Length >> 1;
-            for(int i = 0; i < 128; i++)
-            {
-                int index = i % readsCount;
-                output[i] = (byte)(data[index*2] + i);
             }
             return output;
         }

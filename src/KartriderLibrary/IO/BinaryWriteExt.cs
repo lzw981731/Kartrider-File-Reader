@@ -2,44 +2,16 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Net;
+using KartCity.Common.IO;
+using KartLibrary.Client;
+using KartLibrary.Consts;
+using KartLibrary.Game.Record;
 using KartLibrary.Xml;
 using KartLibrary.Record;
 
 namespace KartLibrary.IO
 {
-    public static class BinaryWriterExt
-    {
-        public static void WriteString(this BinaryWriter br, Encoding encoding,string Text)
-        {
-            byte[] data = encoding.GetBytes(Text);
-            br.Write(Text.Length);
-            br.Write(data);
-            data = null;
-        }
-
-        public static void Write(this BinaryWriter br, Encoding encoding, string Key,string Value)
-        {
-            br.WriteString(encoding, Key);
-            br.WriteString(encoding,Value);
-        }
-
-        public static void WriteNullTerminatedText(this BinaryWriter br, string text, bool wideString)
-        {
-            if (!wideString)
-            {
-                byte[] encData = Encoding.ASCII.GetBytes(text);
-                br.Write(encData);
-                br.Write((byte)0x00);
-            }
-            else
-            {
-                byte[] encData = Encoding.Unicode.GetBytes(text);
-                br.Write(encData);
-                br.Write((short)0x00);
-            }
-        }
-    }
-
     public static class KSVBinaryWExt
     {
         public static void WriteKSVInfo(this BinaryWriter bw, KSVInfo ki)
@@ -47,7 +19,7 @@ namespace KartLibrary.IO
             uint headerClassIdentifier = KSVStructVersion.GetHeaderClassIdentifier(ki.RecordHeaderVersion);
             bw.Write(headerClassIdentifier);
             bw.WriteKRString(ki.RecordTitle);
-            bw.Write((short)ki.RegionCode);
+            bw.Write((short)ki.CountryCode);
             bw.Write(ki.Unknown1_1);
             bw.Write((byte)ki.ContestType);
             uint PlayerNameHash = GetPlayerNameHash(ki.Players);
@@ -64,11 +36,22 @@ namespace KartLibrary.IO
             bw.Write(ki.Unknown3);
             bw.Write((int)ki.BestTime.TotalMilliseconds);
             bw.WriteKRString(ki.ContestImg);
-            bw.Write(ki.Unknown4);
-            bw.Write(ki.Unknown5);
-            bw.Write(ki.Unknown6);
+            if (ki.RecordHeaderVersion >= 5)
+            {
+                bw.Write((int)ki.Unknown4.Length);
+                if(ki.Unknown4.Length > 0)
+                    bw.Write(ki.Unknown4);    
+            }
+            
+            if(ki.RecordHeaderVersion >= 8)
+                bw.Write(ki.Unknown5);
+            
             if (ki.RecordHeaderVersion >= 9)
                 bw.Write((byte)ki.Speed);
+            
+            if(ki.RecordHeaderVersion >= 12)
+                bw.Write(ki.Unknown6);
+            
             PlayerInfo[] players = ki.Players;
             bw.Write(players.Length);
             foreach (PlayerInfo player in players)
@@ -133,14 +116,14 @@ namespace KartLibrary.IO
         public static void WriteRecordStramp(this BinaryWriter bw, RecordStamp data, int KSVHeaderVersion)
         {
             bw.Write((short)(data.Time / 100));
-            bw.Write((short)(data.X * 10));
-            bw.Write((short)(data.Y * 10));
-            bw.Write((short)(data.Z * 10));
+            bw.Write((short)MathF.Round(data.X * 10));
+            bw.Write((short)MathF.Round(data.Y * 10));
+            bw.Write((short)MathF.Round(data.Z * 10));
 
-            bw.Write((short)((data.Angle.W) * 100));
-            bw.Write((short)(data.Angle.X * 100));
-            bw.Write((short)(data.Angle.Y * 100));
-            bw.Write((short)((data.Angle.Z) * 100));
+            bw.Write((short)MathF.Round((data.Angle.W) * 100));
+            bw.Write((short)MathF.Round(data.Angle.X * 100));
+            bw.Write((short)MathF.Round(data.Angle.Y * 100));
+            bw.Write((short)MathF.Round((data.Angle.Z) * 100));
             /*
             bw.Write((short)((data.angle_W) * 100));
             bw.Write((short)(data.angle_X * 100));
@@ -150,23 +133,20 @@ namespace KartLibrary.IO
             bw.Write(data.Status);
         }
 
-        public static void WriteKRDateTime(this BinaryWriter bw, DateTime dateTime)
-        {
-            DateTime dt = new DateTime(1900, 1, 1);
-            TimeSpan ts = dateTime - dt;
-            uint date = (uint)ts.TotalDays;
-            uint time = (uint)(dateTime.Hour * 3600 + dateTime.Minute * 60 + dateTime.Second) >> 2;
-            bw.Write((ushort)date);
-            bw.Write((ushort)time);
-        }
-        public static void WriteKRString(this BinaryWriter bw, string str)
-        {
-            int len = str.Length;
-            byte[] strData = Encoding.GetEncoding("UTF-16").GetBytes(str);
-            bw.Write(len);
-            bw.Write(strData);
-        }
+        public static void WriteKartSpecByte(this BinaryWriter bw, byte value) =>
+            bw.Write((byte)KartSpecEncode.EncodeByte(value));
+        
+        public static void WriteKartSpecSingle(this BinaryWriter bw, float value) =>
+            bw.Write((int)KartSpecEncode.EncodeSingle(value));
+        
+        public static void WriteKartSpecInt32(this BinaryWriter bw, int value) =>
+            bw.Write((int)KartSpecEncode.EncodeInt32(value));
+        
+        public static void WriteKartSpecInt16(this BinaryWriter bw, short value) =>
+            bw.Write((short)KartSpecEncode.EncodeInt16(value));
 
+        
+        
         private static uint GetPlayerNameHash(PlayerInfo[] players)
         {
             uint output = 0;
@@ -199,4 +179,44 @@ namespace KartLibrary.IO
             return (oddSum << 16) + evenSum;
         }
     }
+
+    public static class KartObjectWriterExt
+    {
+        public static void WriteKartObject(this BinaryWriter writer, KartObject kartObject,
+            KartObjectBuffer? buffer)
+        {
+            bool isNew = true;
+            if (buffer is not null)
+            {
+                int index = buffer.AddKartObjectForWrite(kartObject, out isNew);
+                if (isNew)
+                {
+                    writer.Write((short) 0x47aa);
+                    writer.Write(kartObject.ClassStamp);
+                }
+                else
+                {
+                    writer.Write((short) 0x47bb);
+                }
+                if(buffer.UseInt32Index)
+                    writer.Write((int)index);
+                else
+                    writer.Write((short)index);
+            }
+            else
+            {
+                writer.Write(kartObject.ClassStamp);
+            }
+            if(isNew)
+                kartObject.EncodeObject(writer, buffer);
+        }
+        
+        public static void WriteKartObject(this BinaryWriter writer, object field,
+            Dictionary<KartObject, short>? objectCache, Dictionary<object, short>? fieldCache)
+        {
+            
+        }
+    }
+    
+    public delegate void EncodeFieldFunc(BinaryWriter writer, object field, Dictionary<KartObject, short>? objectCache, Dictionary<object, short>? fieldCache);
 }

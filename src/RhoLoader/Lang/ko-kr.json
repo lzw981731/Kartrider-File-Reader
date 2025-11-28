@@ -2,11 +2,11 @@
   "LanguageName": "ko-kr",
   "DisplayName": "한국어",
   "Author": "moremi-kr, Papago Translator, KartRider String Bag",
-  "Font": [ "Malgun Gothic" ],
+  "Font": [ "Noto Sans KR Medium", "Malgun Gothic" ],
   "StringBags": [
     {
       "Name": "title",
-      "Value": "Rho Loader"
+      "Value": "KartCityLite"
     },
     {
       "Name": "menu_file",
@@ -17,8 +17,12 @@
       "Value": "열기"
     },
     {
-      "Name": "menu_openFolder",
-      "Value": "폴더 열기"
+      "Name": "menu_openFolderKr",
+      "Value": "카트라이더 Data 폴더 열기"
+    },
+    {
+      "Name": "menu_openFolderRc",
+      "Value": "레이시티 Data 폴더 열기"
     },
     {
       "Name": "menu_exit",
@@ -133,8 +137,8 @@
       "Value": "알 수 없는 오류! 다시 시도하십시오."
     },
     {
-      "Name": "msg_PlzOpenRhoFileFirst",
-      "Value": "이 작업을 수행하기 전에 Rho 파일을 여십시오."
+      "Name": "msg_PlzOpenFileFirst",
+      "Value": "이 작업을 수행하기 전에 파일을 여십시오."
     },
     {
       "Name": "msg_cancelExtract",

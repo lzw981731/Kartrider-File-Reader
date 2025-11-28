@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using KartCity.Common.IO.SmartStream;
 using KartLibrary.IO;
-using KartLibrary.Data;
 
 namespace KartLibrary.Record
 {
@@ -16,7 +16,7 @@ namespace KartLibrary.Record
             FileStream fs = new FileStream(FileName, FileMode.Open);
             BinaryReader reader = new BinaryReader(fs);
             int FileSize = reader.ReadInt32();
-            byte[] originalData = reader.ReadKRData(FileSize);
+            byte[] originalData = reader.ReadSmartStreamToBytes(FileSize);
             MemoryStream ms = new MemoryStream(originalData);
             BinaryReader memReader = new BinaryReader(ms);
             KSVInfo output = memReader.ReadKSVInfo();
@@ -30,7 +30,7 @@ namespace KartLibrary.Record
             MemoryStream dataMS= new MemoryStream(data);
             BinaryReader reader = new BinaryReader(dataMS);
             int FileSize = reader.ReadInt32();
-            byte[] originalData = reader.ReadKRData(FileSize);
+            byte[] originalData = reader.ReadSmartStreamToBytes(FileSize);
             MemoryStream ms = new MemoryStream(originalData);
             BinaryReader memReader = new BinaryReader(ms);
             KSVInfo output = memReader.ReadKSVInfo();
@@ -47,7 +47,7 @@ namespace KartLibrary.Record
             {
                 BinaryReader reader = new BinaryReader(fileStream);
                 int totalLen = reader.ReadInt32();
-                byte[] decryptData = reader.ReadKRData(totalLen);
+                byte[] decryptData = reader.ReadSmartStreamToBytes(totalLen);
                 using (MemoryStream decryptDataStream = new MemoryStream(decryptData))
                 {
                     BinaryReader dataReader = new BinaryReader(decryptDataStream);
@@ -62,17 +62,13 @@ namespace KartLibrary.Record
             using (FileStream fileStream = new FileStream(FileName, FileMode.Create))
             {
                 BinaryWriter writer = new BinaryWriter(fileStream);
-                writer.Write(0);
                 using (MemoryStream outputDataStream = new MemoryStream())
                 {
                     BinaryWriter dataWriter = new BinaryWriter(outputDataStream);
                     dataWriter.WriteKSVInfo(ksvFile);
                     byte[] rawData = outputDataStream.ToArray();
-                    writer.WriteKRData(rawData, true, true, 0x36699336);
+                    writer.WriteAsSmartStreamData(rawData, SmartStreamMode.CompressedEncrypted, true, 0x36699336);
                 }
-                int total_len = (int)fileStream.Length - 4;
-                fileStream.Seek(0, SeekOrigin.Begin);
-                writer.Write(total_len);
             }
         }
     }

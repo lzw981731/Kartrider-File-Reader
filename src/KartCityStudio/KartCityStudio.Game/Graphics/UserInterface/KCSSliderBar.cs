@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -12,7 +13,7 @@ using osu.Framework.Input.Events;
 
 namespace KartCityStudio.Game.Graphics.UserInterface
 {
-    public partial class KCSSliderBar<T> : SliderBar<T> where T : struct, IComparable<T>, IConvertible, IEquatable<T>
+    public partial class KCSSliderBar<T> : SliderBar<T> where T : struct, IComparable<T>, IConvertible, IEquatable<T>, INumber<T>, IMinMaxValue<T>
     {
         private readonly Container contentContainer;
         private readonly Box foregroundBox;

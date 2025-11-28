@@ -1,4 +1,8 @@
-﻿using osu.Framework.Allocation;
+﻿using System;
+using KartCityStudio.Game.Screens;
+using KartLibrary.Consts;
+using KartLibrary.File;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
 using osu.Framework.Logging;
@@ -13,20 +17,27 @@ namespace KartCityStudio.Game
     {
         private ScreenStack screenStack;
 
+        public KartCityStudioGame()
+        {
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
             // Add your top-level game components here.
             // A screen stack and sample screen has been provided for convenience, but you can replace it if you don't want to use screens.
             Child = screenStack = new ScreenStack { RelativeSizeAxes = Axes.Both };
-            Host.Window.Title = "KartCityStudio";
             Host.Window.CursorState = CursorState.Default;
+            if (Host is WindowsGameHost gameHost)
+            {
+                gameHost.Window.ToString();
+            }
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            
+
             screenStack.Push(new MainScreen());
         }
     }

@@ -6,7 +6,7 @@
   "StringBags": [
     {
       "Name": "title",
-      "Value": "Rho Loader"
+      "Value": "KartCityLite"
     },
     {
       "Name": "menu_file",
@@ -21,8 +21,12 @@
       "Value": "Open Files"
     },
     {
-      "Name": "menu_openFolder",
-      "Value": "Open Data Folder"
+      "Name": "menu_openFolderKr",
+      "Value": "Open KartRider Data Folder"
+    },
+    {
+      "Name": "menu_openFolderRc",
+      "Value": "Open Raycity Data Folder"
     },
     {
       "Name": "menu_exit",
@@ -137,8 +141,8 @@
       "Value": "Unknown Error! Please try again."
     },
     {
-      "Name": "msg_PlzOpenRhoFileFirst",
-      "Value": "Before doing this operation, please open Rho File."
+      "Name": "msg_PlzOpenFileFirst",
+      "Value": "Before doing this operation, please open file."
     },
     {
       "Name": "msg_cancelExtract",

@@ -91,11 +91,14 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
-            isMouseDown = true;
-            if (ScaleWhenButtonDown)
-                internalContainer.ScaleTo(0.85f, 400, Easing.OutQuint);
-            else
-                this.FadeTo(0.55f, 200, Easing.OutQuint);
+            if (Enabled.Value)
+            {
+                isMouseDown = true;
+                if (ScaleWhenButtonDown)
+                    internalContainer.ScaleTo(0.85f, 400, Easing.OutQuint);
+                else
+                    this.FadeTo(0.55f, 200, Easing.OutQuint);
+            }
             return base.OnMouseDown(e);
         }
 
@@ -114,16 +117,22 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         protected override bool OnHover(HoverEvent e)
         {
-            isHover = true;
-            hoverBox.FadeIn(500, Easing.OutQuint);
+            if (Enabled.Value)
+            {
+                isHover = true;
+                hoverBox.FadeIn(500, Easing.OutQuint);
+            }
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            isHover = false;
-            if(!isMouseDown)
-                hoverBox.FadeOut(500, Easing.OutQuint);
+            if (Enabled.Value)
+            {
+                isHover = false;
+                if(!isMouseDown)
+                    hoverBox.FadeOut(500, Easing.OutQuint);
+            }
             base.OnHoverLost(e);
         }
     }

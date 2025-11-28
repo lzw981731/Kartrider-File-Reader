@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
+using System.Drawing.Text;
 using System.Resources;
 using KartLibrary.Xml;
 using KartLibrary.IO;
@@ -17,65 +18,90 @@ using KartLibrary.File;
 using RhoLoader.PreviewWindow;
 using RhoLoader.Setting;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.Arm;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Security.Cryptography;
-
+using KartCity.Common.Xml;
+using KartCityStudio.Common.Model.Archive;
+using KartCityStudio.Common.Model.Archive.Implements.Common;
+using KartCityStudio.Common.Model.Archive.Implements.Jmd;
+using KartCityStudio.Common.Model.Archive.Implements.KartStorage;
+using KartCityStudio.Common.Model.Archive.Implements.Rho;
+using KartCityStudio.Game.Model;
+using KartCityStudio.Model.Archive.Implements.RCStorage;
 using RhoLoader.Controls;
+using RhoLoader.Controls.PreviewPanel;
+using RhoLoader.Dialog;
+
 
 namespace RhoLoader
 {
     public partial class MainWindow : Form
     {
-        private SettingLoader BaseSettingLoader = new SettingLoader();
-
-        private PackFolderManager BaseFolderManager = new PackFolderManager();
-
-        private PackFolderInfo _root_folder;
-
-        private PackFolderInfo _cur_folder;
-
+        private SettingLoader _baseSettingLoader = new SettingLoader();
+        
+        private IArchiveModel? _currentArchiveModel = null;
+        private IArchiveFolder? _currentFolder = null;
+        
+        private LoadingDialog _dialogLoading =  new LoadingDialog();
+        
         public MainWindow()
         {
             InitializeComponent();
+            FontManager.Initialize();
             LanguageManager.LoadLang();
             LanguageManager.LanguageName = "en-us";
             AddLanguages();
             LoadSetting();
             LoadLang();
-            listview_main.SmallImageList = imageList_listview;
-            listview_main.SmallImageList.Images.Add("file", new Bitmap(global::RhoLoader.Properties.Resources.baseline_insert_drive_file_black_18dp));
-            listview_main.SmallImageList.Images.Add("folder", new Bitmap(global::RhoLoader.Properties.Resources.folder_close));
+            _listviewMain.SmallImageList = imageList_listview;
+            _listviewMain.SmallImageList.Images.Add("file", new Bitmap(global::RhoLoader.Properties.Resources.baseline_insert_drive_file_black_18dp));
+            _listviewMain.SmallImageList.Images.Add("file_image", new Bitmap(global::RhoLoader.Properties.Resources.file_image));
+            _listviewMain.SmallImageList.Images.Add("file_music", new Bitmap(global::RhoLoader.Properties.Resources.file_music));
+            _listviewMain.SmallImageList.Images.Add("file_xml", new Bitmap(global::RhoLoader.Properties.Resources.file_xml));
+            _listviewMain.SmallImageList.TransparentColor = Color.Transparent;
+            _listviewMain.SmallImageList.ColorDepth = ColorDepth.Depth32Bit;
+            _listviewMain.SmallImageList.ImageSize = new  Size(14, 14);
+            _listviewMain.SmallImageList.Images.Add("folder", new Bitmap(global::RhoLoader.Properties.Resources.folder_close));
         }
         public MainWindow(StartupOption startupOption) : this()
         {
-
+            
         }
 
         #region Globalization
         private void LoadLang()
         {
             this.menu.Text = ((string)this.menu.Tag).GetStringBag();
+            
             this.menu_file.Text = ((string)this.menu_file.Tag).GetStringBag();
             this.menu_file_open.Text = ((string)this.menu_file_open.Tag).GetStringBag();
-            this.menu_file_openFiles.Text = ((string)this.menu_file_openFiles.Tag).GetStringBag();
-            this.menu_file_openFolder.Text = ((string)this.menu_file_openFolder.Tag).GetStringBag();
+            this.menu_file_openFolderKr.Text = ((string)this.menu_file_openFolderKr.Tag).GetStringBag();
+            this.menu_file_openFolderRc.Text = ((string)this.menu_file_openFolderRc.Tag).GetStringBag();
             this.menu_file_exit.Text = ((string)this.menu_file_exit.Tag).GetStringBag();
             this.menu_extract.Text = ((string)this.menu_extract.Tag).GetStringBag();
             this.menu_extract_all.Text = ((string)this.menu_extract_all.Tag).GetStringBag();
             this.menu_extract_current.Text = ((string)this.menu_extract_current.Tag).GetStringBag();
-            this.filemenu_extractfile.Text = ((string)this.filemenu_extractfile.Tag).GetStringBag();
+            this.fileMenuExtractfile.Text = ((string)this.fileMenuExtractfile.Tag).GetStringBag();
             this.menu_about.Text = ((string)this.menu_about.Tag).GetStringBag();
             this.columnHeader1.Text = ((string)this.columnHeader1.Tag).GetStringBag();
             this.columnHeader2.Text = ((string)this.columnHeader2.Tag).GetStringBag();
             this.columnHeader3.Text = ((string)this.columnHeader3.Tag).GetStringBag();
-            this.Text = ((string)this.Tag).GetStringBag();
+            
+            this.Text = ((string)this.Tag).GetStringBag() +  RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => RuntimeInformation.OSArchitecture == Architecture.X64 ? " (X64)" : " (emulated X64 )",
+                Architecture.Arm64 => " (Arm64)",
+                Architecture.LoongArch64 => " (LoongArch64)",
+                _ => " (Unknown)"
+            };;
             this.menu_lang.Text = ((string)this.menu_lang.Tag).GetStringBag();
-            this.filemenu_extract_selected.Text = ((string)this.filemenu_extract_selected.Tag).GetStringBag();
-            this.filemenu_convertPNG.Text = ((string)this.filemenu_convertPNG.Tag).GetStringBag();
-            this.filemenu_convertXML.Text = ((string)this.filemenu_convertXML.Tag).GetStringBag();
+            this.fileMenuExtractSelected.Text = ((string)this.fileMenuExtractSelected.Tag).GetStringBag();
+            this.fileMenuConvertPNG.Text = ((string)this.fileMenuConvertPNG.Tag).GetStringBag();
+            this.fileMenuConvertXML.Text = ((string)this.fileMenuConvertXML.Tag).GetStringBag();
             LoadLangFont();
-            if (_cur_folder is not null)
-                UpdateUIFolder();
+            UpdateListView().Wait();
             /*
             if (!(BaseRhoFile is null))
                 UpdateFolders();
@@ -90,7 +116,8 @@ namespace RhoLoader
                 ToolStripMenuItem menu_langname = new ToolStripMenuItem();
                 menu_langname.Text = lang.DisplayName;
                 menu_langname.AutoSize = true;
-                menu_langname.Click += action_changeLanguage;
+                menu_langname.Tag = lang;
+                menu_langname.Click += ActionChangeLanguage;
                 menu_langname.Font = lang.GetLangFontWithBase(this.Font);
                 temp.Add(menu_langname);
             }
@@ -101,20 +128,20 @@ namespace RhoLoader
             this.menu.Font = LanguageManager.GetLangFontWithBase(this.menu.Font);
             this.menu_file.Font = LanguageManager.GetLangFontWithBase(this.menu_file.Font);
             this.menu_file_open.Font = LanguageManager.GetLangFontWithBase(this.menu_file_open.Font);
-            this.menu_file_openFiles.Font = LanguageManager.GetLangFontWithBase(this.menu_file_openFiles.Font);
-            this.menu_file_openFolder.Font = LanguageManager.GetLangFontWithBase(this.menu_file_openFolder.Font);
+            this.menu_file_openFolderKr.Font = LanguageManager.GetLangFontWithBase(this.menu_file_openFolderKr.Font);
+            this.menu_file_openFolderRc.Font = LanguageManager.GetLangFontWithBase(this.menu_file_openFolderRc.Font);
             this.menu_file_exit.Font = LanguageManager.GetLangFontWithBase(this.menu_file_exit.Font);
             this.menu_extract.Font = LanguageManager.GetLangFontWithBase(this.menu_extract.Font);
             this.menu_extract_all.Font = LanguageManager.GetLangFontWithBase(this.menu_extract_all.Font);
             this.menu_extract_current.Font = LanguageManager.GetLangFontWithBase(this.menu_extract_current.Font);
-            this.filemenu_extractfile.Font = LanguageManager.GetLangFontWithBase(this.filemenu_extractfile.Font);
+            this.fileMenuExtractfile.Font = LanguageManager.GetLangFontWithBase(this.fileMenuExtractfile.Font);
             this.menu_about.Font = LanguageManager.GetLangFontWithBase(this.menu_about.Font);
-            this.listview_main.Font = LanguageManager.GetLangFontWithBase(this.listview_main.Font);
-            this.Text = ((string)this.Tag).GetStringBag();
+            this._listviewMain.Font = LanguageManager.GetLangFontWithBase(this._listviewMain.Font);
+            
             //this.menu_lang.Font = LanguageManager.GetLangFontWithBase(this.menu_lang.Font);
-            this.filemenu_convertPNG.Font = LanguageManager.GetLangFontWithBase(this.filemenu_convertPNG.Font);
-            this.filemenu_convertXML.Font = LanguageManager.GetLangFontWithBase(this.filemenu_convertXML.Font);
-            this.filemenu_extract_selected.Font = LanguageManager.GetLangFontWithBase(this.filemenu_extract_selected.Font);
+            this.fileMenuConvertPNG.Font = LanguageManager.GetLangFontWithBase(this.fileMenuConvertPNG.Font);
+            this.fileMenuConvertXML.Font = LanguageManager.GetLangFontWithBase(this.fileMenuConvertXML.Font);
+            this.fileMenuExtractSelected.Font = LanguageManager.GetLangFontWithBase(this.fileMenuExtractSelected.Font);
         }
 
         #endregion
@@ -123,462 +150,388 @@ namespace RhoLoader
         {
             if (!File.Exists("Setting.json"))
                 return;
-            BaseSettingLoader.LoadSetting("Setting.json");
-            RhoLoader.Setting.Setting baseSetting = BaseSettingLoader.Setting;
+            _baseSettingLoader.LoadSetting("Setting.json");
+            RhoLoader.Setting.Setting baseSetting = _baseSettingLoader.Setting;
             LanguageManager.SetLanguage(LanguageName: baseSetting.Language);
         }
+
+        private void SaveSetting()
+        {
+            _baseSettingLoader.SaveSetting("Setting.json");
+        }
+        #endregion
+
+        #region Font Loading
+
+        private void LoadFont()
+        {
+            PrivateFontCollection privateFontCollection = new PrivateFontCollection();
+            foreach (var file in Directory.GetFiles("Fonts", "*.ttf"))
+            {
+                privateFontCollection.AddFontFile(file);    
+            }
+        }
+
         #endregion
         #region Control Action
-        private void action_changeLanguage(object sender, EventArgs e)
+        private void ActionChangeLanguage(object sender, EventArgs e)
         {
-            ToolStripItem menu_langname = (ToolStripItem)sender;
-            LanguageManager.SetLanguage(DisplayName: menu_langname.Text);
-            BaseSettingLoader.Setting.Language = LanguageManager.LanguageName;
-            BaseSettingLoader.SaveSetting("Setting.json");
-            LoadLang();
-        }
-        private void action_openFolder(object sender, EventArgs e)
-        {
-            FolderBrowserDialog fbd = new FolderBrowserDialog();
-            fbd.Description = "Please select Data folder including aaa.pk.";
-            if (fbd.ShowDialog() == DialogResult.OK)
+            if (sender is ToolStripMenuItem menuItem && menuItem.Tag is Language lang)
             {
-                if (!File.Exists($"{fbd.SelectedPath}\\aaa.pk"))
-                    MessageBox.Show("aaa.pk cannot found in the folder.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                else
+                LanguageManager.SetLanguage(LanguageName: lang.LanguageName);
+                _baseSettingLoader.Setting.Language = lang.LanguageName;
+                SaveSetting();
+                LoadLang();
+            }
+        }
+        private void ActionOpenFolderKr(object sender, EventArgs e)
+        {
+            if (_dialogKartData.ShowDialog() == DialogResult.OK)
+            {
+                _currentArchiveModel?.Dispose();
+                _currentArchiveModel = new KartStorageArchiveModel(_dialogKartData.SelectedPath);
+                _currentArchiveModel.LoadCompleted += ArchiveLoadComplete;
+                _currentArchiveModel.LoadFailure += ArchiveLoadFailure;
+                
+                CancellationTokenSource cancellationTokenSource = new();
+                _currentArchiveModel.BeginLoadArchive(cancellationTokenSource.Token);
+                
+                if (_dialogLoading.ShowDialog() != DialogResult.OK)
                 {
-                    CloseCurrentFile();
-                    BaseFolderManager.OpenDataFolder($"{fbd.SelectedPath}\\aaa.pk");
-                    Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
-                    Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
-                    PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
-                    foreach (PackFolderInfo folder in rootFolders)
-                    {
-                        folderQueue.Enqueue(folder);
-                        TreeNode rootNode = new TreeNode()
-                        {
-                            Text = folder.FolderName,
-                            Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                        };
-                        nodeQueue.Enqueue(rootNode);
-                        treeview_explorer.Nodes.Add(rootNode);
-                    }
-                    while (folderQueue.Count > 0 && nodeQueue.Count > 0)
-                    {
-                        TreeNode node = nodeQueue.Dequeue();
-                        PackFolderInfo packFolderInfo = folderQueue.Dequeue();
-                        foreach (PackFolderInfo folder in packFolderInfo.GetFoldersInfo())
-                        {
-                            TreeNode subnode = new TreeNode()
-                            {
-                                Text = folder.FolderName,
-                                Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                            };
-                            node.Nodes.Add(subnode);
-                            folderQueue.Enqueue(folder);
-                            nodeQueue.Enqueue(subnode);
-                        }
-                    }
-                    _cur_folder = _root_folder = BaseFolderManager.GetRootFolder();
-                    //PathStack.Push("");
-                    UpdateUIFolder();
+                    cancellationTokenSource.Cancel();
                 }
             }
         }
-        private void action_open(object sender, EventArgs e)
+
+        private void ActionOpenFolderRc(object sender, EventArgs e)
         {
-            dialog_multiFile.InitialDirectory = dialog_singleFile.InitialDirectory;
-            if (dialog_singleFile.ShowDialog() == DialogResult.OK)
+            if (_dialogKartData.ShowDialog() == DialogResult.OK)
             {
-                CloseCurrentFile();
-                BaseFolderManager.OpenSingleFile(dialog_singleFile.FileName);
-                Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
-                Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
-                PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
-                foreach (PackFolderInfo folder in rootFolders)
+                _currentArchiveModel?.Dispose();
+                _currentArchiveModel = new RCStorageArchiveModel(_dialogKartData.SelectedPath);
+                _currentArchiveModel.LoadCompleted += ArchiveLoadComplete;
+                _currentArchiveModel.LoadFailure += ArchiveLoadFailure;
+                
+                CancellationTokenSource cancellationTokenSource = new();
+                _currentArchiveModel.BeginLoadArchive(cancellationTokenSource.Token);
+                
+                if (_dialogLoading.ShowDialog() != DialogResult.OK)
                 {
-                    folderQueue.Enqueue(folder);
-                    TreeNode rootNode = new TreeNode()
-                    {
-                        Text = folder.FolderName,
-                        Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                    };
-                    nodeQueue.Enqueue(rootNode);
-                    treeview_explorer.Nodes.Add(rootNode);
+                    cancellationTokenSource.Cancel();
                 }
-                while (folderQueue.Count > 0 && nodeQueue.Count > 0)
-                {
-                    TreeNode node = nodeQueue.Dequeue();
-                    PackFolderInfo packFolderInfo = folderQueue.Dequeue();
-                    foreach (PackFolderInfo folder in packFolderInfo.GetFoldersInfo())
-                    {
-                        TreeNode subnode = new TreeNode()
-                        {
-                            Text = folder.FolderName,
-                            Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                        };
-                        node.Nodes.Add(subnode);
-                        folderQueue.Enqueue(folder);
-                        nodeQueue.Enqueue(subnode);
-                    }
-                }
-                _cur_folder = _root_folder = rootFolders[0];
-                //PathStack.Push(rootFolders[0].FullName);
-                UpdateUIFolder();
             }
         }
-        private void action_open_files(object sender, EventArgs e)
+        private async void ActionOpen(object sender, EventArgs e)
         {
-            dialog_singleFile.InitialDirectory = dialog_multiFile.InitialDirectory;
-            if (dialog_multiFile.ShowDialog() == DialogResult.OK)
+            if (_dialogMultiFile.ShowDialog() == DialogResult.OK)
             {
-                CloseCurrentFile();
-                BaseFolderManager.OpenMultipleFiles(dialog_multiFile.FileNames);
-                Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
-                Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
-                PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
-                foreach (PackFolderInfo folder in rootFolders)
+                _currentArchiveModel?.Dispose();
+
+                AggregatedArchiveModel archiveModel  = new();
+                foreach (var fileName in _dialogMultiFile.FileNames)
                 {
-                    folderQueue.Enqueue(folder);
-                    TreeNode rootNode = new TreeNode()
-                    {
-                        Text = folder.FolderName,
-                        Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                    };
-                    nodeQueue.Enqueue(rootNode);
-                    treeview_explorer.Nodes.Add(rootNode);
+                    if(fileName.EndsWith(".rho"))
+                        archiveModel.MountArchive(Path.GetFileName(fileName), new RhoArchiveModel(fileName));
+                    else if(fileName.EndsWith(".jmd"))
+                        archiveModel.MountArchive(Path.GetFileName(fileName), new JmdArchiveModel(fileName));
                 }
-                while (folderQueue.Count > 0 && nodeQueue.Count > 0)
+                _currentArchiveModel = archiveModel;
+                _currentArchiveModel.LoadCompleted += ArchiveLoadComplete;
+                _currentArchiveModel.LoadFailure += ArchiveLoadFailure;
+                
+                CancellationTokenSource cancellationTokenSource = new();
+                _currentArchiveModel.BeginLoadArchive(cancellationTokenSource.Token);
+
+                if (_dialogLoading.ShowDialog() != DialogResult.OK)
                 {
-                    TreeNode node = nodeQueue.Dequeue();
-                    PackFolderInfo packFolderInfo = folderQueue.Dequeue();
-                    foreach (PackFolderInfo folder in packFolderInfo.GetFoldersInfo())
-                    {
-                        TreeNode subnode = new TreeNode()
-                        {
-                            Text = folder.FolderName,
-                            Tag = new NodeInfoContainer(NodeType.Folder, folder)
-                        };
-                        node.Nodes.Add(subnode);
-                        folderQueue.Enqueue(folder);
-                        nodeQueue.Enqueue(subnode);
-                    }
+                    await cancellationTokenSource.CancelAsync();
                 }
-                _cur_folder = _root_folder = BaseFolderManager.GetRootFolder();
-                //PathStack.Push(rootFolders[0].FullName);
-                UpdateUIFolder();
             }
         }
-        private void action_aboutWindow(object sender, EventArgs e)
+        private void ActionAboutWindow(object sender, EventArgs e)
         {
-            AboutMe aboutDialog = new AboutMe();
-            aboutDialog.ShowDialog();
+            AboutMe aboutMe = new();
+            aboutMe.ShowDialog();
         }
-        private void action_exit(object sender, EventArgs e)
+        private void ActionExit(object sender, EventArgs e)
         {
             Application.Exit();
         }
-        private void action_listview_click(object sender, MouseEventArgs e)
+        private async void ActionListViewClick(object sender, MouseEventArgs e)
         {
-            if (e.Button != MouseButtons.Right)
-                return;
-            if (listview_main.SelectedItems.Count == 0)
-                return;
-            contextMenu_list.Show((Control)sender, e.X, e.Y);
-            filemenu_extract_selected.Enabled = true;
-            if (listview_main.SelectedItems.Count == 1 && listview_main.SelectedItems[0].Tag is PackFileInfo)
+            
+        }
+        private async void ActionListviewDoubleclick(object sender, MouseEventArgs e)
+        {
+            if (_listviewMain.SelectedItems.Count == 1 && _currentFolder is not null)
             {
-                filemenu_extractfile.Enabled = true;
-                filemenu_convertPNG.Enabled = listview_main.SelectedItems[0].SubItems[0].Text.EndsWith(".tga") || listview_main.SelectedItems[0].SubItems[0].Text.EndsWith(".dds");
-                filemenu_convertXML.Enabled = listview_main.SelectedItems[0].SubItems[0].Text.EndsWith(".bml");
+                if (_listviewMain.SelectedItems[0].Tag is IArchiveFolder archiveFolder)
+                {
+                    await EnterToFolder(archiveFolder);
+                }
+                else if (_listviewMain.SelectedItems[0].Tag is IArchiveFile archiveFile)
+                {
+                    await PreviewArchiveFile(archiveFile);
+                }
             }
+        }
+        private async void ActionBack(object sender, EventArgs e)
+        {
+            if(_currentFolder?.Parent is not null)
+            {
+                await EnterToFolder(_currentFolder.Parent);   
+            }
+        }
+        private void ActionIconEnableChanged(object sender, EventArgs e)
+        {
+            if (_iconBack.Enabled)
+                this._iconBack.Image = global::RhoLoader.Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled;
             else
+                this._iconBack.Image = global::RhoLoader.Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled_disabled;
+        }
+        private async void ActionNodeSelect(object sender, TreeViewEventArgs e)
+        {
+            if (_treeViewExplorer.SelectedNode is not null &&
+                _treeViewExplorer.SelectedNode.Tag is NodeInfoContainer nodeInfoContainer &&
+                nodeInfoContainer.BaseData is IArchiveFolder archiveFolder)
             {
-                filemenu_extractfile.Enabled = false;
-                filemenu_convertPNG.Enabled = false;
-                filemenu_convertXML.Enabled = false;
+                await EnterToFolder(archiveFolder);
             }
         }
-        private void action_listview_doubleclick(object sender, MouseEventArgs e)
+        private void ActionExtractAll(object sender, EventArgs e)
         {
-            if (e.Button != MouseButtons.Left || listview_main.SelectedItems.Count == 0)
-                return;
-            ListViewItem sel_item = listview_main.SelectedItems[0];
-            if (sel_item.Tag is PackFileInfo sel_file)
+            if (_currentArchiveModel is null)
             {
-                string FileName = sel_item.Text;
-                string ext = sel_file.FullName[^3..^0];
-                if (ext == "dds" || ext == "tga")
-                {
-                    TgaDDsViewer tdv = new TgaDDsViewer();
-                    tdv.Data = sel_file.GetData();
-                    tdv.Type = ext == "dds" ? TgaDDsViewer.FileType.dds : ext == "tga" ? TgaDDsViewer.FileType.tga : throw new Exception();
-                    tdv.ShowBox();
-                }
-                else if (ext == "bml")
-                {
-                    byte[] bmlData = sel_file.GetData();
-                    bmlViewer bv = new bmlViewer(bmlData, sel_file.FullName);
-                    bv.Show();
-                }
-                else if (ext == "ksv")
-                {
-                    byte[] ksvData = sel_file.GetData();
-                    string region_str = LanguageManager.LanguageName switch
-                    {
-                        "ko-kr" => "kr",
-                        "zh-cn" => "cn",
-                        "zh-tw" => "tw",
-                        _ => "kr"
-                    };
-                    PackFileInfo? track_info = BaseFolderManager.GetFile($"track_/common/trackLocale@{region_str}.bml");
-                    if (track_info is not null)
-                    {
-                        byte[] data = track_info.GetData();
-                        BinaryXmlDocument bmlDoc = new BinaryXmlDocument();
-                        bmlDoc.Read(Encoding.GetEncoding("UTF-16"), data);
-                        KSVPreview preview = new KSVPreview(ksvData, bmlDoc.RootTag);
-                        preview.Show();
-                    }
-                    else
-                    {
-                        KSVPreview preview = new KSVPreview(ksvData);
-                        preview.Show();
-                    }
-                }
-                else
-                {
-                    if (ext == "kml")
-                    {
-                        FileName = $"{FileName[0..^3]}.xml";
-                    }
-                    FileStream fs = new FileStream(Environment.GetEnvironmentVariable("TEMP") + $"\\{FileName}", FileMode.Create);
-                    byte[] data = sel_file.GetData();
-                    fs.Write(data, 0, data.Length);
-                    fs.Close();
-                    data = null;
-                    Process ps = new Process();
-                    ps.StartInfo.FileName = "explorer.exe";
-                    ps.StartInfo.Arguments = Environment.GetEnvironmentVariable("TEMP") + $"\\{FileName}";
-                    ps.Start();
-                }
-            }
-            else if (sel_item.Tag is PackFolderInfo sel_folder)
-            {
-                _cur_folder = sel_folder;
-                UpdateUIFolder();
-            }
-        }
-        private void action_back(object sender, EventArgs e)
-        {
-            if (_cur_folder != _root_folder)
-            {
-                _cur_folder = _cur_folder.ParentFolder == null ? _root_folder : _cur_folder.ParentFolder;
-                UpdateUIFolder();
-            }
-            else
-            {
-                icon_back.Enabled = false;
-            }
-        }
-        private void action_icon_enable_changed(object sender, EventArgs e)
-        {
-            if (icon_back.Enabled)
-                this.icon_back.Image = global::RhoLoader.Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled;
-            else
-                this.icon_back.Image = global::RhoLoader.Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled_disabled;
-        }
-        private void action_node_select(object sender, TreeViewEventArgs e)
-        {
-            var click_node = e.Node;
-            if (click_node is null)
-                return;
-            var node_info = click_node.Tag as NodeInfoContainer;
-            if (node_info is null)
-                return;
-            var folder_info = node_info.BaseData as PackFolderInfo;
-            if (folder_info is null)
-                return;
-            _cur_folder = folder_info;
-            UpdateUIFolder();
-        }
-        private void action_extract_all(object sender, EventArgs e)
-        {
-            if (_cur_folder is null)
-            {
-                MessageBox.Show("msg_open_plz".GetStringBag(), "msg_level_error".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("msg_PlzOpenFileFirst".GetStringBag(), "title".GetStringBag());
                 return;
             }
-            FolderBrowserDialog _folderDialog = new FolderBrowserDialog();
-            ExtractOption _extractOptionDialog = new ExtractOption();
-            if (_folderDialog.ShowDialog() == DialogResult.OK && _extractOptionDialog.ShowDialog() == DialogResult.OK)
-            {
 
-                ExtractFolder _extractFolderDialog = new ExtractFolder(_root_folder, _folderDialog.SelectedPath, _extractOptionDialog.SelectOption);
-                if (_extractFolderDialog.ShowDialog() != DialogResult.OK)
-                    MessageBox.Show("msg_cancel_operation".GetStringBag(), "msg_level_info".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ExtractOption extractOptionDialog =  new ExtractOption();
+            if (_dialogExtractSelector.ShowDialog() == DialogResult.OK && extractOptionDialog.ShowDialog() == DialogResult.OK)
+            {
+                ExtractFolder extractFolderDialog = new ExtractFolder(
+                    _dialogExtractSelector.SelectedPath,
+                    extractOptionDialog.SelectOption,
+                    _currentArchiveModel.RootFolder
+                );
+                extractFolderDialog.ShowDialog();
             }
         }
-        private void action_extract_current(object sender, EventArgs e)
+        private void ActionExtractCurrent(object sender, EventArgs e)
         {
-            if (_cur_folder is null)
+            if (_currentArchiveModel is null)
             {
-                MessageBox.Show("msg_open_plz".GetStringBag(), "msg_level_error".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("msg_PlzOpenFileFirst".GetStringBag(), "title".GetStringBag());
                 return;
             }
-            FolderBrowserDialog _folderDialog = new FolderBrowserDialog();
-            ExtractOption _extractOptionDialog = new ExtractOption();
-            if (_folderDialog.ShowDialog() == DialogResult.OK && _extractOptionDialog.ShowDialog() == DialogResult.OK)
-            {
 
-                ExtractFolder _extractFolderDialog = new ExtractFolder(_cur_folder, _folderDialog.SelectedPath, _extractOptionDialog.SelectOption);
-                if (_extractFolderDialog.ShowDialog() != DialogResult.OK)
-                    MessageBox.Show("msg_cancel_operation".GetStringBag(), "msg_level_info".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-        }
-        private void action_extractfile(object sender, EventArgs e)
-        {
-            if (listview_main.SelectedItems.Count == 0)
-                return;
-            ListViewItem sel_item = listview_main.SelectedItems[0];
-            if (sel_item.Tag is PackFileInfo sel_file)
+            if (_listviewMain.SelectedItems.Count > 0)
             {
-                SaveFileDialog sfd = new SaveFileDialog();
-                string FileName = listview_main.SelectedItems[0].SubItems[0].Text;
-                sfd.Filter = "AllFiles|*.*";
-                sfd.FileName = FileName;
-                if (sfd.ShowDialog() == DialogResult.OK)
+                List<IArchiveElement> elements = [];
+                foreach (ListViewItem selectedItem in _listviewMain.SelectedItems)
                 {
-                    FileStream fs = new FileStream(sfd.FileName, FileMode.Create);
-                    byte[] data = sel_file.GetData();
-                    fs.Write(data, 0, data.Length);
-                    fs.Close();
-                    data = null;
+                    if(selectedItem.Tag is IArchiveElement archiveElement)
+                        elements.Add(archiveElement);
+                }
+                
+                ExtractOption extractOptionDialog =  new ExtractOption();
+                if (_dialogExtractSelector.ShowDialog() == DialogResult.OK && extractOptionDialog.ShowDialog() == DialogResult.OK)
+                {
+                    ExtractFolder extractFolderDialog = new ExtractFolder(
+                        _dialogExtractSelector.SelectedPath,
+                        extractOptionDialog.SelectOption,
+                        [..elements]
+                    );
+                    extractFolderDialog.ShowDialog();
                 }
             }
         }
-        private void action_extract_selected(object sender, EventArgs e)
+        private void ActionExtractfile(object sender, EventArgs e)
         {
-            if (listview_main.SelectedItems.Count == 0)
-                return;
-            if (_cur_folder is null)
+            
+        }
+        private void ActionExtractSelected(object sender, EventArgs e)
+        {
+            
+        }
+        private void ActionConvertPng(object sender, EventArgs e)
+        {
+            
+        }
+        private void ActionConvertXml(object sender, EventArgs e)
+        {
+            LoadingDialog loadingDialog = new LoadingDialog();
+            loadingDialog.ShowDialog();
+        }
+
+        private void ActionDebug(object sender, EventArgs e)
+        {
+            TestWindow testWindow = new TestWindow();
+            testWindow.Show();
+        }
+
+        private void ActionSelectItemChanged(object sender, EventArgs e)
+        {
+            if (_listviewMain.SelectedItems.Count > 0)
             {
-                MessageBox.Show("msg_open_plz".GetStringBag(), "msg_level_error".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            FolderBrowserDialog _folderDialog = new FolderBrowserDialog();
-            ExtractOption _extractOptionDialog = new ExtractOption();
-            if (_folderDialog.ShowDialog() == DialogResult.OK && _extractOptionDialog.ShowDialog() == DialogResult.OK)
-            {
-                List<PackFileInfo> output_files = new List<PackFileInfo>();
-                List<PackFolderInfo> output_folders = new List<PackFolderInfo>();
-                foreach (ListViewItem sel_item in listview_main.SelectedItems)
+                var selectedItem = _listviewMain.SelectedItems[0];
+                if (selectedItem.Tag is IArchiveFile archiveFile)
                 {
-                    if (sel_item.Tag is PackFileInfo sel_file)
-                    {
-                        output_files.Add((PackFileInfo)sel_file.Clone());
-                    }
-                    else if (sel_item.Tag is PackFolderInfo sel_folder)
-                    {
-                        output_folders.Add((PackFolderInfo)sel_folder.Clone());
-                    }
+                    _previewPanel.LoadPreview(archiveFile);
                 }
-                PackFolderInfo extract_virtual_folder = new PackFolderInfo("", "", null, output_folders, output_files);
-                ExtractFolder _extractFolderDialog = new ExtractFolder(extract_virtual_folder, _folderDialog.SelectedPath, _extractOptionDialog.SelectOption);
-                if (_extractFolderDialog.ShowDialog() != DialogResult.OK)
-                    MessageBox.Show("msg_cancel_operation".GetStringBag(), "msg_level_info".GetStringBag(), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-        private void action_convert_png(object sender, EventArgs e)
+
+        private Control? ActionCreatePreviewControl(string extension, CancellationToken token)
         {
-            if (listview_main.SelectedItems.Count == 0)
-                return;
-            ListViewItem sel_item = listview_main.SelectedItems[0];
-            if (sel_item.Tag is PackFileInfo sel_file)
+            switch (extension)
             {
-                string FileName = listview_main.SelectedItems[0].SubItems[0].Text;
-                byte[] data = sel_file.GetData();
-                TgaDDsViewer tga_viewer = new TgaDDsViewer();
-                tga_viewer.Data = data;
-                tga_viewer.ConvertTGADDSToPng();
-                data = null;
+                case ".xml":
+                case ".bml":
+                case ".kml":
+                    return new XmlPreview();
+                case ".png":
+                case ".jpg":
+                case ".jpeg":
+                case ".dds":
+                case ".tga":
+                    return new ImagePreview();
             }
+
+            return null;
         }
-        private void action_convert_xml(object sender, EventArgs e)
+
+        private void ActionInitPreviewControl(IArchiveFile archiveFile, Control? control, Stream stream,
+            CancellationToken token)
         {
-            if (listview_main.SelectedItems.Count == 0)
-                return;
-            ListViewItem sel_item = listview_main.SelectedItems[0];
-            if (sel_item.Tag is PackFileInfo sel_file)
+            switch (control)
             {
-                string FileName = listview_main.SelectedItems[0].SubItems[0].Text;
-                byte[] data = sel_file.GetData();
-                BinaryXmlDocument bxd = new BinaryXmlDocument();
-                bxd.Read(Encoding.GetEncoding("UTF-16"), data);
-                string output = bxd.RootTag.ToString();
-                byte[] output_data = Encoding.GetEncoding("UTF-16").GetBytes(output);
-                SaveFileDialog sfd = new SaveFileDialog();
-                sfd.FileName = $"{sel_file.FullName[0..^3]}.xml";
-                sfd.Filter = "XML File|*.xml";
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    FileStream fs = new FileStream(sfd.FileName, FileMode.Create);
-                    fs.Write(output_data, 0, output_data.Length);
-                    fs.Close();
-                }
+                case XmlPreview xmlPreview:
+                    bool isBml = (archiveFile.Name.EndsWith(".bml"));
+                    xmlPreview.InitControl(stream, isBml, token);
+                    break;
+                case ImagePreview imagePreview:
+                    bool reqConvert = (archiveFile.Name.EndsWith(".dds") || archiveFile.Name.EndsWith(".tga"));
+                    imagePreview.InitControl(stream, reqConvert, token);
+                    break;
             }
         }
         #endregion
+
         #region Other Function
-        private string GetCurrentPath()
+
+        private void ArchiveLoadComplete(bool success)
         {
-            if (_cur_folder is null)
-                return "";
-            return _cur_folder.FullName;
-        }
-        private void UpdateUIFolder()
-        {
-            if (_cur_folder is null)
+            _dialogLoading.LoadCompleted();
+            
+            if (success && _currentArchiveModel is not null)
             {
+                Task.Run(async () =>
+                {
+                    await EnterToFolder(_currentArchiveModel.RootFolder);
+                    await UpdateTreeNodes();
+                });
+            }
+        }
+        
+        
+
+        private void ArchiveLoadFailure(Exception exception)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(ArchiveLoadFailure, exception);
+            else
+                MessageBox.Show($"{exception.Message}\r\n" +
+                                $"Exception: {exception.GetType()}\r\n" +
+                                $"Stack trace: \r\n{exception.StackTrace??""}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        
+        private async Task UpdateListView()
+        {
+            if (this.InvokeRequired)
+            {
+                await this.Invoke(UpdateListView);
                 return;
             }
-            List<ListViewItem> temp_list = new List<ListViewItem>();
-            this.listview_main.Items.Clear();
-            foreach (PackFolderInfo sub_folder in _cur_folder.GetFoldersInfo())
+            _listviewMain.Items.Clear();
+            
+            if (_currentFolder is not null)
             {
-                ListViewItem lvi = new ListViewItem(new string[] { sub_folder.FolderName, ("listview_item2_folder").GetStringBag(), $"" });
-                lvi.ImageKey = "folder";
-                lvi.Tag = sub_folder;
-                temp_list.Add(lvi);
+                _listviewMain.Items.AddRange(_currentFolder.Folders
+                    .Select(x => new ListViewItem(new string[]{ x.Name, ("listview_item2_folder").GetStringBag(), "" })
+                    {
+                        ImageKey = "folder",
+                        Tag = x,
+                    })
+                    .Concat(_currentFolder.Files.Select(x => new ListViewItem(new string[] { x.Name, ("listview_item2_file").GetStringBag(), FormatDataLength(x.FileSize) })
+                    {
+                        ImageKey = Path.GetExtension(x.Name) switch
+                        {
+                            ".ksv" => "file_ksv",
+                            ".bml" => "file_xml",
+                            ".xml" => "file_xml",
+                            ".kml" => "file_xml",
+                            ".png" => "file_image",
+                            ".dds" => "file_image",
+                            ".tga" => "file_image",
+                            ".ogg" => "file_music",
+                            _ => "file",
+                        },
+                        Tag = x,
+                    })).ToArray());
             }
-            foreach (PackFileInfo sub_file in _cur_folder.GetFilesInfo())
-            {
-                ListViewItem lvi = new ListViewItem(new string[] { sub_file.FileName, ("listview_item2_file").GetStringBag(), $"{FormatDataLength(sub_file.FileSize)}" });
-                lvi.ImageKey = "file";
-                lvi.Tag = sub_file;
-                temp_list.Add(lvi);
-            }
-            this.listview_main.Items.AddRange(temp_list.ToArray());
-            this.textbox_path.Text = GetCurrentPath();
-            if (_cur_folder != _root_folder)
-                this.icon_back.Enabled = true;
-            else
-                this.icon_back.Enabled = false;
         }
-        private void CloseCurrentFile()
+        private async Task UpdateTreeNodes()
         {
-            /*
-            FolderStack.Clear();
-            PathStack.Clear();
-            */
-            treeview_explorer.Nodes.Clear();
-            listview_main.Items.Clear();
-            BaseFolderManager.Reset();
+            if (_currentArchiveModel is not null)
+            {
+                await Task.Run(() =>
+                {
+                    Queue<(TreeNode?, IArchiveFolder)> queue = [];
+                    List<TreeNode> rootNodes = [];
+
+                    queue.Enqueue((null, _currentArchiveModel.RootFolder));
+
+                    while (queue.Count > 0)
+                    {
+                        var topElement = queue.Dequeue();
+                        foreach (var folder in topElement.Item2.Folders)
+                        {
+                            TreeNode folderNode = new TreeNode()
+                            {
+                                Text = folder.Name,
+                                Tag = new NodeInfoContainer(NodeType.Folder, folder)
+                            };
+                            if (topElement.Item1 is null)
+                            {
+                                rootNodes.Add(folderNode);
+                            }
+                            else
+                            {
+                                topElement.Item1.Nodes.Add(folderNode);
+                            }
+                            queue.Enqueue((folderNode, folder));
+                        }
+                    }
+
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke(_treeViewExplorer.Nodes.Clear, []);
+                        this.Invoke(_treeViewExplorer.Nodes.AddRange, [rootNodes.ToArray()]);
+                    }
+                    else
+                    {
+                        _treeViewExplorer.Nodes.Clear();
+                        _treeViewExplorer.Nodes.AddRange([.. rootNodes]);
+                    }
+                });
+            }
         }
         private string FormatDataLength(int length)
         {
             string[] units = { "Bytes", "KiB", "MiB" };
             double dlen = length;
+            
             foreach (string unit in units)
             {
                 if (dlen > 1024)
@@ -588,6 +541,74 @@ namespace RhoLoader
             }
             return $"{dlen} {units[units.Length - 1]}";
         }
+        private async Task EnterToFolder(IArchiveFolder folder)
+        {
+            if (this.InvokeRequired)
+            {
+                await this.Invoke(async () => await EnterToFolder(folder));
+                return;
+            }
+            _currentFolder = folder;
+            textbox_path.Text = folder.FullName;
+            _iconBack.Enabled = _currentFolder?.Parent is not null;
+            
+            await UpdateListView();
+        }
+
+        private async Task PreviewArchiveFile(IArchiveFile file)
+        {
+            await using var stream = file.CreateStream() ;
+            string extension = Path.GetExtension(file.Name);
+
+            if (extension is ".bml" or ".xml" or ".kml")
+            {
+                XmlViewer bmlViewer = new XmlViewer();
+                if (extension is ".bml")
+                {
+                    BinaryReader reader = new BinaryReader(stream);
+                    var bmlTag = reader.ReadBinaryXmlTag(Encoding.Unicode);
+                    bmlViewer.LoadFromBml(file.Name, bmlTag);
+                }
+                else
+                {
+                    StreamReader streamReader = new StreamReader(stream);
+                    var xml = await streamReader.ReadToEndAsync();
+                    bmlViewer.LoadFromXml(file.Name, xml);
+                }
+
+                bmlViewer.Show();
+            }
+            else if (extension is ".dds" or ".tga")
+            {
+                await using var fileStream = file.CreateStream();
+                byte[] buffer = new byte[fileStream.Length];
+                await fileStream.ReadAsync(buffer);
+
+                ImageViewer viewer = new ImageViewer()
+                {
+                    Data = buffer
+                };
+
+                if (this.InvokeRequired)
+                    this.Invoke(viewer.ShowBox);
+                else
+                {
+                    viewer.ShowBox();
+                }
+            }
+            else
+            {
+                string tmpFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                if(!Directory.Exists(tmpFilePath))
+                    Directory.CreateDirectory(tmpFilePath);
+                tmpFilePath = Path.Combine(tmpFilePath, file.Name);
+                
+                await using var fileStream = File.Create(tmpFilePath);
+                await stream.CopyToAsync(fileStream);
+                Process.Start("explorer.exe", tmpFilePath);
+            }
+        }
+
         #endregion
 
         #region StartupSetting

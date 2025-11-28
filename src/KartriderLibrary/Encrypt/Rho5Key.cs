@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
 namespace KartLibrary.Encrypt
@@ -546,51 +547,105 @@ namespace KartLibrary.Encrypt
         //4C19A0 1.23516 ver
         public unsafe static byte[] GetPackedFileKey(byte[] fileChksum, int u1, string FileName)
         {
-            if (!Sse2.IsSupported)
-                throw new NotSupportedException("Your computer is not support SSE2.");
-            byte[] fileNameData = Encoding.GetEncoding("UTF-16").GetBytes(FileName);
-            uint temp_ebx = (uint)u1;
-            double[] arr1 = new double[] { 0d, 4294967296d };
-            double temp1 = arr1[(uint)u1 >> 31];
-            Vector128<int> dv = Sse2.LoadVector128(&u1);
-            Vector128<double> dr = Sse2.ConvertToVector128Double(dv);
-            Vector128<double> temp2 = Sse2.LoadVector128(&temp1);
-            dr = Sse2.AddScalar(dr, temp2);
-            Vector128<double> a1 = func_E321D0(dr);
-            int temp_esi = Sse2.ConvertToInt32WithTruncation(a1);
-            int[] arr2 = new int[temp_esi +1];
-            int i = temp_esi;
-            while(temp_ebx!=0)
+            if (Sse2.IsSupported)
             {
-                ulong a = 0xCCCCCCCDul * temp_ebx;
-                uint b = (uint)((a >> 32) >> 3); //edx
-                arr2[i--] = ((byte)temp_ebx) - (byte)((((b << 2) & 0xFF) + b) << 1);
-                temp_ebx = b;
+                byte[] fileNameData = Encoding.GetEncoding("UTF-16").GetBytes(FileName);
+                uint temp_ebx = (uint)u1;
+                double[] arr1 = new double[] { 0d, 4294967296d };
+                double temp1 = arr1[(uint)u1 >> 31];
+                Vector128<int> dv = Sse2.LoadScalarVector128(&u1);
+                Vector128<double> dr = Sse2.ConvertToVector128Double(dv);
+                Vector128<double> temp2 = Sse2.LoadVector128(&temp1);
+                dr = Sse2.AddScalar(dr, temp2);
+                Vector128<double> a1 = func_E321D0(dr);
+                int temp_esi = Sse2.ConvertToInt32WithTruncation(a1);
+                int[] arr2 = new int[temp_esi +1];
+                int i = temp_esi;
+                while(temp_ebx!=0)
+                {
+                    ulong a = 0xCCCCCCCDul * temp_ebx;
+                    uint b = (uint)((a >> 32) >> 3); //edx
+                    arr2[i--] = ((byte)temp_ebx) - (byte)((((b << 2) & 0xFF) + b) << 1);
+                    temp_ebx = b;
+                }
+                byte[] output = new byte[0x80];
+                for(i=0;i< output.Length; i++)
+                {
+                    int a = (sbyte)arr2[i%arr2.Length];
+                    a = (int)(a & 0x80000001); //[ebp-08]
+                    if (a < 0)
+                        a = ((a - 1) | -2) + 1;
+                    int b = (sbyte)arr2[(i + 1) % arr2.Length]; //[ebp-04]
+                    int c = (int)(((sbyte)arr2[(i + 2) % arr2.Length]+i) & 0x8000000F); //esi at 4BA09F
+                    if (c < 0)
+                        c = ((c - 1) | -10) + 1;
+                    int outByte = ((b + i) % 5);//ecx at 4BA0BC
+                    outByte = (sbyte)((outByte + fileChksum[c] + a )&0xFF);
+                    outByte *= (sbyte)fileNameData[(i % FileName.Length) << 1];
+                    outByte += i;
+                    output[i] = (byte)outByte;
+                }
+                return output;
             }
-            byte[] output = new byte[0x80];
-            for(i=0;i< output.Length; i++)
+            else if(AdvSimd.IsSupported) // For arm64
             {
-                int a = (sbyte)arr2[i%arr2.Length];
-                a = (int)(a & 0x80000001); //[ebp-08]
-                if (a < 0)
-                    a = ((a - 1) | -2) + 1;
-                int b = (sbyte)arr2[(i + 1) % arr2.Length]; //[ebp-04]
-                int c = (int)(((sbyte)arr2[(i + 2) % arr2.Length]+i) & 0x8000000F); //esi at 4BA09F
-                if (c < 0)
-                    c = ((c - 1) | -10) + 1;
-                int outByte = ((b + i) % 5);//ecx at 4BA0BC
-                outByte = (sbyte)((outByte + fileChksum[c] + a )&0xFF);
-                outByte *= (sbyte)fileNameData[(i % FileName.Length) << 1];
-                outByte += i;
-                output[i] = (byte)outByte;
+                byte[] fileNameData = Encoding.GetEncoding("UTF-16").GetBytes(FileName);
+                uint temp_ebx = (uint)u1;
+                double[] arr1 = new double[] { 0d, 4294967296d };
+                double temp1 = arr1[(uint)u1 >> 31];
+                Vector128<double> dr = AdvSimd.Insert(new Vector128<double>(), 0, u1);
+                Vector128<double> temp2 = AdvSimd.LoadVector128(&temp1);
+                dr = AdvSimd.AddScalar(dr.GetLower(), temp2.GetLower()).ToVector128().WithUpper(dr.GetUpper());
+                Vector128<double> a1 = func_E321D0(dr);
+                int temp_esi = (int)(Math.Round(a1.GetLower().AsDouble()[0]));
+                int[] arr2 = new int[temp_esi +1];
+                int i = temp_esi;
+                while(temp_ebx!=0)
+                {
+                    ulong a = 0xCCCCCCCDul * temp_ebx;
+                    uint b = (uint)((a >> 32) >> 3); //edx
+                    arr2[i--] = ((byte)temp_ebx) - (byte)((((b << 2) & 0xFF) + b) << 1);
+                    temp_ebx = b;
+                }
+                byte[] output = new byte[0x80];
+                for(i=0;i< output.Length; i++)
+                {
+                    int a = (sbyte)arr2[i%arr2.Length];
+                    a = (int)(a & 0x80000001); //[ebp-08]
+                    if (a < 0)
+                        a = ((a - 1) | -2) + 1;
+                    int b = (sbyte)arr2[(i + 1) % arr2.Length]; //[ebp-04]
+                    int c = (int)(((sbyte)arr2[(i + 2) % arr2.Length]+i) & 0x8000000F); //esi at 4BA09F
+                    if (c < 0)
+                        c = ((c - 1) | -10) + 1;
+                    int outByte = ((b + i) % 5);//ecx at 4BA0BC
+                    outByte = (sbyte)((outByte + fileChksum[c] + a )&0xFF);
+                    outByte *= (sbyte)fileNameData[(i % FileName.Length) << 1];
+                    outByte += i;
+                    output[i] = (byte)outByte;
+                }
+                return output;
             }
-            return output;
+            else
+            {
+                throw new Exception("<UNK>");
+            }
         }
 
         private unsafe static Vector128<double> func_E321D0(Vector128<double> _inxmm0)
         {
+            if (Sse2.IsSupported)
+                return func_E321D0_sse2(_inxmm0);
+            else if (AdvSimd.IsSupported)
+                return func_E321D0_arm64(_inxmm0);
+            else
+                throw new Exception("Unexcepted");
+        }
+        
+        private unsafe static Vector128<double> func_E321D0_sse2(Vector128<double> _inxmm0)
+        {
             Vector128<double> xmm0 = _inxmm0;
-            double temp_1 = 0; //the varible that stored at address:esp
+            double temp_1 = 0; //the variable that stored at address:esp
             Sse2.StoreLow(&temp_1, xmm0);
             int temp_edx = 0;
             // E323E1 jmp to here
@@ -678,19 +733,160 @@ namespace KartLibrary.Encrypt
             return new Vector128<double>();
         }
 
+        private unsafe static Vector128<double> func_E321D0_arm64(Vector128<double> _inxmm0)
+        {
+            Vector128<double> xmm0 = _inxmm0;
+            double temp_1 = 0; //the variable that stored at address:esp
+            AdvSimd.Store(&temp_1, xmm0.GetLower());
+            int temp_edx = 0;
+            // E323E1 jmp to here
+            while (true)
+            {
+                Vector128<double> xmm5 = xmm0;
+                xmm0 = xmm0.WithLower(xmm0.GetLower()).WithUpper(xmm0.GetLower());
+                xmm5 = AdvSimd.ShiftRightLogical(
+                    AdvSimd.ShiftRightLogical(
+                        AdvSimd.ShiftRightLogical(
+                            AdvSimd.ShiftRightLogical(
+                                xmm5.AsInt64(), 0x10
+                                ), 0x10
+                            ), 0x10
+                        ), 0x4
+                    ).AsDouble();
+                int temp_ecx = AdvSimd.Extract(xmm5.AsUInt16(), 0); //temp_2 is ecx on E32218
+                long _temp_F4A320 = 0x000FFFFFFFFFFFFF;
+                long _temp_F4A330 = 0x3FDBC00000000000;
+                long _temp_F4A340 = 0x428FFFFFFFFFF810;
+                long _temp_F4A350 = 0x7FFFFFFF80000000;
+                long _temp_F4A390 = 0x3FF0000000000000;
+                Vector128<double> xmm1 = LoadVector128LH((double*)&_temp_F4A320);
+                Vector128<double> xmm2 = LoadVector128LH((double*)&_temp_F4A330);
+                Vector128<double> xmm3 = LoadVector128LH((double*)&_temp_F4A390);
+                Vector128<double> xmm4 = LoadVector128LH((double*)&_temp_F4A340);
+                Vector128<double> xmm6 = LoadVector128LH((double*)&_temp_F4A350);
+                xmm0 = AdvSimd.And(xmm0, xmm1);
+                xmm0 = AdvSimd.Or(xmm0, xmm3);
+                xmm4 = AdvSimd.AddScalar(xmm4.GetLower(), xmm0.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.AddScalar(xmm4.GetUpper(), xmm0.GetUpper()));
+                int temp_eax = AdvSimd.Extract(xmm4.AsUInt16(), 0); //eax at E32251
+                temp_eax &= 0x7F0;
+                xmm4 = LoadVector128FromByteArray(_mem_F4CEE0, temp_eax);
+                Vector128<double> xmm7 = LoadVector128FromByteArray(_mem_F4CAD0, temp_eax);
+                xmm6 = AdvSimd.And(xmm6, xmm0);
+                xmm0 = AdvSimd.SubtractScalar(xmm0.GetLower(), xmm6.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.SubtractScalar(xmm0.GetUpper(), xmm6.GetUpper()));
+                xmm6 = AdvSimd.MultiplyScalar(xmm6.GetLower(), xmm4.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.MultiplyScalar(xmm6.GetUpper(), xmm4.GetUpper()));
+                xmm6 = AdvSimd.SubtractScalar(xmm6.GetLower(), xmm2.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.SubtractScalar(xmm6.GetUpper(), xmm2.GetUpper()));
+                xmm7 = AdvSimd.AddScalar(xmm7.GetLower(), xmm6.GetLower()).ToVector128()
+                    .WithUpper(xmm7.GetUpper());
+                xmm0 = AdvSimd.MultiplyScalar(xmm0.GetLower(), xmm4.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.MultiplyScalar(xmm0.GetUpper(), xmm4.GetUpper()));
+                xmm4 = xmm0;
+                xmm0 = AdvSimd.AddScalar(xmm0.GetLower(), xmm6.GetLower()).ToVector128()
+                    .WithUpper(AdvSimd.AddScalar(xmm0.GetUpper(), xmm6.GetUpper()));
+                temp_ecx &= 0xFFF;
+                temp_ecx--;
+                if (temp_ecx <= 0x7FD)
+                {
+                    temp_ecx -= 0x3FE;
+                    temp_ecx += temp_edx;
+                    xmm6 = AdvSimd.Insert(xmm6, 0, (double)temp_ecx);
+                    xmm6 = xmm6.WithUpper(xmm6.GetLower());
+                    temp_ecx <<= 0x0A;
+                    temp_eax += temp_ecx;
+                    temp_ecx = 0x10;
+                    temp_edx = 0;
+                    if (temp_eax == 0)
+                        temp_edx = temp_ecx;
+                    xmm1 = LoadVector128FromByteArray(_mem_F4A300, 0xE0);
+                    xmm3 = xmm0;
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0xF0);
+                    xmm1 = AdvSimd.MultiplyScalar(xmm1.GetLower(), xmm0.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm1.GetUpper(), xmm0.GetUpper()));
+                    xmm3 = AdvSimd.MultiplyScalar(xmm3.GetLower(), xmm3.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm3.GetUpper(), xmm3.GetUpper()));
+                    xmm1 = AdvSimd.AddScalar(xmm1.GetLower(), xmm2.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.AddScalar(xmm1.GetUpper(), xmm2.GetUpper()));
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0x100);
+                    xmm3 = AdvSimd.MultiplyScalar(xmm3.GetLower(), xmm3.GetLower()).ToVector128().WithUpper(xmm3.GetUpper());
+                    xmm5 = LoadVector128FromByteArray(_mem_F4A300, 0x60);
+                    xmm6 = AdvSimd.MultiplyScalar(xmm6.GetLower(), xmm5.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm6.GetUpper(), xmm5.GetUpper()));
+                    xmm5 = LoadVector128FromByteArray(_mem_F4A300, 0x70 + temp_edx);
+                    xmm4 = AdvSimd.And(xmm4, xmm5);
+                    xmm7 = AdvSimd.AddScalar(xmm7.GetLower(), xmm6.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.AddScalar(xmm7.GetUpper(), xmm6.GetUpper()));
+                    xmm7 = AdvSimd.AddScalar(xmm7.GetLower(), xmm4.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.AddScalar(xmm7.GetUpper(), xmm4.GetUpper()));
+                    xmm1 = AdvSimd.MultiplyScalar(xmm1.GetLower(), xmm0.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm1.GetUpper(), xmm0.GetUpper()));
+                    xmm3 = AdvSimd.MultiplyScalar(xmm3.GetLower(), xmm0.GetLower()).ToVector128().WithUpper(xmm3.GetUpper());
+                    xmm1 = AdvSimd.AddScalar(xmm1.GetLower(), xmm2.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.AddScalar(xmm1.GetUpper(), xmm2.GetUpper()));
+                    xmm2 = LoadVector128FromByteArray(_mem_F4A300, 0x110);
+                    xmm2 = AdvSimd.MultiplyScalar(xmm2.GetLower(), xmm0.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm2.GetUpper(), xmm0.GetUpper()));
+                    xmm6 = xmm7;
+                    xmm6 = xmm6.WithLower(xmm6.GetUpper());
+                    xmm1 = AdvSimd.MultiplyScalar(xmm1.GetLower(), xmm3.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.MultiplyScalar(xmm1.GetUpper(), xmm3.GetUpper()));
+                    xmm0 = xmm1;
+                    xmm1 = AdvSimd.AddScalar(xmm1.GetLower(), xmm2.GetLower()).ToVector128()
+                        .WithUpper(AdvSimd.AddScalar(xmm1.GetUpper(), xmm2.GetUpper()));
+                    xmm0 = xmm0.WithLower(xmm0.GetUpper());
+                    xmm0 = AdvSimd.AddScalar(xmm0.GetLower(), xmm1.GetLower()).ToVector128().WithUpper(xmm0.GetUpper());
+                    xmm0 = AdvSimd.AddScalar(xmm0.GetLower(), xmm6.GetLower()).ToVector128().WithUpper(xmm0.GetUpper());
+                    xmm0 = AdvSimd.AddScalar(xmm0.GetLower(), xmm7.GetLower()).ToVector128().WithUpper(xmm0.GetUpper());
+                    return xmm0;
+                }
+                else
+                {
+                    xmm0 = AdvSimd.Insert(xmm0, 0, temp_1);
+                }
+            }
+            return new Vector128<double>();
+        }
+        
         private unsafe static Vector128<double> LoadVector128LH(double* address)
         {
-            Vector128<double> output = Sse2.LoadVector128(address).AsDouble();
-            output = Sse2.LoadHigh(output, address);
-            return output;
+            if (Sse2.IsSupported)
+            {
+                Vector128<double> output = Sse2.LoadVector128(address);
+                output = Sse2.LoadHigh(output, address);
+                return output;    
+            }
+            else if (AdvSimd.IsSupported)
+            {
+                Vector128<double> output = AdvSimd.LoadAndInsertScalar(new Vector128<double>(), 0, address);
+                output = output.WithUpper(output.GetLower());
+                return output;
+            }
+            else
+            {
+                throw new Exception("Unsupported");
+            }
         }
 
         private unsafe static Vector128<double> LoadVector128FromByteArray(byte[] arr, int index)
         {
             fixed(byte *address = arr)
             {
-                Vector128<double> output = Sse2.LoadVector128(address+index).AsDouble();
-                return output;
+                if (Sse2.IsSupported)
+                {
+                    Vector128<double> output = Sse2.LoadVector128(address+index).AsDouble();
+                    return output;
+                }
+                else if(AdvSimd.IsSupported)
+                {
+                    Vector128<double> output = AdvSimd.LoadVector128(address+index).AsDouble();
+                    return output;
+                }
+                else
+                {
+                    throw new Exception("Unsupported");
+                }
             }
         }
 

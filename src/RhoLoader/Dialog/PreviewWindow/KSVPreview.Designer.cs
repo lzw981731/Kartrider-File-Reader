@@ -1,6 +1,6 @@
 ﻿namespace RhoLoader.PreviewWindow
 {
-    partial class KSVPreview
+    partial class KsvPreview
     {
         /// <summary>
         /// Required designer variable.
@@ -28,125 +28,123 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.contestName = new System.Windows.Forms.Label();
-            this.infoBox = new System.Windows.Forms.ListView();
-            this.key = new System.Windows.Forms.ColumnHeader();
-            this.value = new System.Windows.Forms.ColumnHeader();
-            this.players = new System.Windows.Forms.ListView();
-            this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.label2 = new System.Windows.Forms.Label();
-            this.panel1.SuspendLayout();
-            this.SuspendLayout();
+            contestName = new System.Windows.Forms.Label();
+            infoBox = new System.Windows.Forms.ListView();
+            key = new System.Windows.Forms.ColumnHeader();
+            value = new System.Windows.Forms.ColumnHeader();
+            players = new System.Windows.Forms.ListView();
+            columnHeader1 = new System.Windows.Forms.ColumnHeader();
+            panel1 = new System.Windows.Forms.Panel();
+            label2 = new System.Windows.Forms.Label();
+            panel1.SuspendLayout();
+            SuspendLayout();
             // 
             // contestName
             // 
-            this.contestName.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
-            this.contestName.Dock = System.Windows.Forms.DockStyle.Top;
-            this.contestName.Font = new System.Drawing.Font("Meiryo UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.contestName.ForeColor = System.Drawing.Color.White;
-            this.contestName.Location = new System.Drawing.Point(0, 0);
-            this.contestName.Margin = new System.Windows.Forms.Padding(0);
-            this.contestName.Name = "contestName";
-            this.contestName.Size = new System.Drawing.Size(934, 41);
-            this.contestName.TabIndex = 0;
-            this.contestName.Text = "這是個測試用文字 这是个测试用文字 이것은 테스트 텍스트입니다";
-            this.contestName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            contestName.BackColor = System.Drawing.Color.FromArgb(((int)((byte)48)), ((int)((byte)48)), ((int)((byte)48)));
+            contestName.Dock = System.Windows.Forms.DockStyle.Top;
+            contestName.Font = new System.Drawing.Font("Meiryo UI", 15.75F);
+            contestName.ForeColor = System.Drawing.Color.White;
+            contestName.Location = new System.Drawing.Point(0, 0);
+            contestName.Margin = new System.Windows.Forms.Padding(0);
+            contestName.Name = "contestName";
+            contestName.Size = new System.Drawing.Size(934, 41);
+            contestName.TabIndex = 0;
+            contestName.Text = "這是個測試用文字 这是个测试用文字 이것은 테스트 텍스트입니다";
+            contestName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // infoBox
             // 
-            this.infoBox.BackColor = System.Drawing.SystemColors.HotTrack;
-            this.infoBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.infoBox.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.key,
-            this.value});
-            this.infoBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.infoBox.Font = new System.Drawing.Font("Meiryo", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.infoBox.ForeColor = System.Drawing.Color.White;
-            this.infoBox.FullRowSelect = true;
-            this.infoBox.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.infoBox.Location = new System.Drawing.Point(0, 41);
-            this.infoBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.infoBox.MultiSelect = false;
-            this.infoBox.Name = "infoBox";
-            this.infoBox.Size = new System.Drawing.Size(934, 478);
-            this.infoBox.TabIndex = 1;
-            this.infoBox.UseCompatibleStateImageBehavior = false;
-            this.infoBox.View = System.Windows.Forms.View.Details;
+            infoBox.BackColor = System.Drawing.Color.FromArgb(((int)((byte)36)), ((int)((byte)36)), ((int)((byte)36)));
+            infoBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            infoBox.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { key, value });
+            infoBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            infoBox.Font = new System.Drawing.Font("Meiryo", 9.75F);
+            infoBox.ForeColor = System.Drawing.Color.White;
+            infoBox.FullRowSelect = true;
+            infoBox.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
+            infoBox.Location = new System.Drawing.Point(0, 41);
+            infoBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            infoBox.MultiSelect = false;
+            infoBox.Name = "infoBox";
+            infoBox.Size = new System.Drawing.Size(934, 478);
+            infoBox.TabIndex = 1;
+            infoBox.UseCompatibleStateImageBehavior = false;
+            infoBox.View = System.Windows.Forms.View.Details;
             // 
             // key
             // 
-            this.key.Width = 215;
+            key.Name = "key";
+            key.Width = 215;
             // 
             // value
             // 
-            this.value.Width = 215;
+            value.Name = "value";
+            value.Width = 215;
             // 
             // players
             // 
-            this.players.Activation = System.Windows.Forms.ItemActivation.OneClick;
-            this.players.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.players.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1});
-            this.players.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.players.Font = new System.Drawing.Font("Meiryo", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.players.FullRowSelect = true;
-            this.players.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.players.Location = new System.Drawing.Point(0, 30);
-            this.players.Margin = new System.Windows.Forms.Padding(0);
-            this.players.Name = "players";
-            this.players.Size = new System.Drawing.Size(433, 448);
-            this.players.TabIndex = 2;
-            this.players.UseCompatibleStateImageBehavior = false;
-            this.players.View = System.Windows.Forms.View.Details;
-            this.players.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.players_ItemSelectionChanged);
-            this.players.MouseHover += new System.EventHandler(this.players_MouseHover);
+            players.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            players.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            players.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { columnHeader1 });
+            players.Dock = System.Windows.Forms.DockStyle.Fill;
+            players.Font = new System.Drawing.Font("Meiryo", 9.75F);
+            players.FullRowSelect = true;
+            players.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
+            players.Location = new System.Drawing.Point(0, 30);
+            players.Margin = new System.Windows.Forms.Padding(0);
+            players.Name = "players";
+            players.Size = new System.Drawing.Size(433, 448);
+            players.TabIndex = 2;
+            players.UseCompatibleStateImageBehavior = false;
+            players.View = System.Windows.Forms.View.Details;
+            players.ItemSelectionChanged += players_ItemSelectionChanged;
+            players.MouseHover += players_MouseHover;
             // 
             // columnHeader1
             // 
-            this.columnHeader1.Width = 430;
+            columnHeader1.Name = "columnHeader1";
+            columnHeader1.Width = 430;
             // 
             // panel1
             // 
-            this.panel1.BackColor = System.Drawing.Color.IndianRed;
-            this.panel1.Controls.Add(this.players);
-            this.panel1.Controls.Add(this.label2);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel1.Location = new System.Drawing.Point(501, 41);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(433, 478);
-            this.panel1.TabIndex = 3;
+            panel1.BackColor = System.Drawing.Color.IndianRed;
+            panel1.Controls.Add(players);
+            panel1.Controls.Add(label2);
+            panel1.Dock = System.Windows.Forms.DockStyle.Right;
+            panel1.Location = new System.Drawing.Point(501, 41);
+            panel1.Name = "panel1";
+            panel1.Size = new System.Drawing.Size(433, 478);
+            panel1.TabIndex = 3;
             // 
             // label2
             // 
-            this.label2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(235)))), ((int)(((byte)(235)))));
-            this.label2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.label2.Font = new System.Drawing.Font("Bahnschrift", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label2.ForeColor = System.Drawing.Color.Black;
-            this.label2.Location = new System.Drawing.Point(0, 0);
-            this.label2.Margin = new System.Windows.Forms.Padding(0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(433, 30);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "Players";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            label2.BackColor = System.Drawing.Color.FromArgb(((int)((byte)235)), ((int)((byte)235)), ((int)((byte)235)));
+            label2.Dock = System.Windows.Forms.DockStyle.Top;
+            label2.Font = new System.Drawing.Font("Bahnschrift", 12F);
+            label2.ForeColor = System.Drawing.Color.Black;
+            label2.Location = new System.Drawing.Point(0, 0);
+            label2.Margin = new System.Windows.Forms.Padding(0);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(433, 30);
+            label2.TabIndex = 5;
+            label2.Text = "Players";
+            label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // KSVPreview
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(934, 519);
-            this.Controls.Add(this.panel1);
-            this.Controls.Add(this.infoBox);
-            this.Controls.Add(this.contestName);
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Name = "KSVPreview";
-            this.Text = "KSVPreview";
-            this.Load += new System.EventHandler(this.KSVPreview_Load);
-            this.panel1.ResumeLayout(false);
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            BackColor = System.Drawing.Color.White;
+            ClientSize = new System.Drawing.Size(934, 519);
+            Controls.Add(panel1);
+            Controls.Add(infoBox);
+            Controls.Add(contestName);
+            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            Text = "KSVPreview";
+            Load += KSVPreview_Load;
+            panel1.ResumeLayout(false);
+            ResumeLayout(false);
         }
 
         #endregion

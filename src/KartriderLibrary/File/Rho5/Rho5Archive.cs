@@ -11,6 +11,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using KartCity.Common.FileType;
+using KartCity.Common.IO;
 
 namespace KartLibrary.File
 {
@@ -26,6 +30,8 @@ namespace KartLibrary.File
         private Dictionary<string, Rho5FileHandler> _fileHandlers;
         private Dictionary<int, int> _dataBeginPoses;
         private bool _closed;
+        private string _dataPackName;
+        private CountryCode _country;
         #endregion
 
         #region Properties
@@ -45,7 +51,7 @@ namespace KartLibrary.File
         #endregion
 
         #region Methods
-        public void Open(string dataPackPath, string dataPackName, CountryCode region)
+        public void Open(string dataPackPath, string dataPackName, CountryCode country)
         {
             if (!Directory.Exists(dataPackPath))
                 throw new Exception($"{dataPackPath} doesn't exists.");
@@ -58,15 +64,28 @@ namespace KartLibrary.File
                 {
                     string dataPackIDStr = match.Groups[1].Value;
                     int dataPackID = Convert.ToInt32(dataPackIDStr);
-                    openSingleFile(dataPackID, fileInfo.FullName, region);
+                    openSingleFile(dataPackID, fileInfo.FullName, country);
                 }
             }
+
+            _dataPackName = dataPackName;
+            _country = country;
         }
 
-        public void Save(string dataPackPath, string dataPackName, CountryCode region, SavePattern savePattern = SavePattern.Auto)
+        public void Save(string dataPackPath, SavePattern savePattern = SavePattern.Auto)
+        {
+            Save(dataPackPath, _dataPackName, _country, savePattern);
+        }
+        
+        public void Save(string dataPackPath, CountryCode country, SavePattern savePattern = SavePattern.Auto)
+        {
+            Save(dataPackPath, _dataPackName,country, savePattern);
+        }
+        
+        public void Save(string dataPackPath, string dataPackName, CountryCode country, SavePattern savePattern = SavePattern.Auto)
         {
             int maxOpenedPartID = _rho5Streams.Count == 0 ? -1 : _rho5Streams.Select(x => x.Key).Max();
-            string mixingStr = getMixingString(region);
+            string mixingStr = getMixingString(country);
             Dictionary<int, bool> isPartModified = new Dictionary<int, bool>();
             Dictionary<int, Queue<Rho5File>> oldFilesQueues = new Dictionary<int, Queue<Rho5File>>();
             Queue<Rho5File> newFilesQueue = new Queue<Rho5File>();
@@ -108,7 +127,7 @@ namespace KartLibrary.File
                         if(_rho5Streams.ContainsKey(i) && _rho5Streams[i].Name != fullFilename)
                             reopen = false;
                     }
-                    saveSingleFileTo(dataPackPath, $"{dataPackName}", i, mixingStr, oldFilesQueues[i], int.MaxValue, reopen);
+                    saveSingleFileTo(dataPackPath, $"{dataPackName}", i, mixingStr, oldFilesQueues[i], int.MaxValue >> 1, reopen);
                 }
             }
 
@@ -146,12 +165,12 @@ namespace KartLibrary.File
             releaseAllHandles();
         }
 
-        private void openSingleFile(int dataPackID, string filePath, CountryCode region)
+        private void openSingleFile(int dataPackID, string filePath, CountryCode country)
         {
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException($"");
             FileStream rho5Stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            string mixingStr = getMixingString(region);
+            string mixingStr = getMixingString(country);
             string fileName = Path.GetFileName(filePath);
             Rho5DecryptStream decryptStream = new Rho5DecryptStream(rho5Stream, fileName, mixingStr);
             BinaryReader reader = new BinaryReader(decryptStream);
@@ -174,7 +193,7 @@ namespace KartLibrary.File
             decryptStream.SetToFilesInfoKey(fileName, mixingStr);
             for (int i = 0; i < fileCount; i++)
             {
-                string fileFullPath = reader.ReadText();
+                string fileFullPath = reader.ReadKRString();
                 int fileInfoChecksum = reader.ReadInt32();
                 int unknown = reader.ReadInt32();
                 int offset = reader.ReadInt32();
@@ -234,6 +253,9 @@ namespace KartLibrary.File
             {
                 throw new Exception("directory not exists.");
             }
+
+            if (maxSize < 0)
+                maxSize = 10485760; // 10 MiB
             string outFileName = Path.GetFileName(fullName);
 
             MemoryStream tmpMemStream = new MemoryStream(Math.Min(maxSize, 21943040));
@@ -373,6 +395,22 @@ namespace KartLibrary.File
 
             tmpMemStream.Dispose();
         }
+        
+        internal bool FileHasModified()
+        {
+            Queue<Rho5Folder> queue = [];
+            queue.Enqueue(_rootFolder);
+
+            while (queue.TryDequeue(out var folder))
+            {
+                if (folder.HasModified)
+                    return true;
+                
+                queue.Enqueue(folder);
+            }
+
+            return false;
+        }
 
         private int getHeaderOffset(string fileName)
         {
@@ -405,9 +443,9 @@ namespace KartLibrary.File
             return result;
         }
 
-        private string getMixingString(CountryCode region)
+        private string getMixingString(CountryCode country)
         {
-            switch (region)
+            switch (country)
             {
                 case CountryCode.KR:
                     return "y&errfV6GRS!e8JL";

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -14,7 +15,16 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 {
     public partial class KCSTextbox : TextBox
     {
+        private readonly Container contentContainer = new Container()
+        {
+            RelativeSizeAxes = Axes.Both,
+            Margin = new MarginPadding() { Right = -10f },
+            Masking = true,
+        };
+
         private readonly Box background;
+        private readonly Container innerContainer;
+
         protected KCSCaret Caret;
 
         public Colour4 BackgroundColour
@@ -22,6 +32,14 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             get => background.Colour;
             set => background.Colour = value;
         }
+
+        public new float CornerRadius
+        {
+            get => innerContainer.CornerRadius;
+            set => innerContainer.CornerRadius = value;
+        }
+
+        protected override Container Content => contentContainer;
 
         protected override Caret CreateCaret() => Caret = new KCSCaret();
 
@@ -33,8 +51,10 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         protected override void NotifyInputError()
         {
-            
+
         }
+
+        protected override float LeftRightPadding => 10f;
 
         protected override Drawable GetDrawableCharacter(char c) => new SpriteText
         {
@@ -42,19 +62,33 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             Font = KCSFont.Default,
         };
 
+        public Regex? NameFilter { get; set; } = null;
+
         public KCSTextbox()
         {
             Masking = true;
-            CornerRadius = 5f;
-            
-            Add(background = new Box()
+            InternalChildren = new Drawable[]
             {
-                RelativeSizeAxes = Axes.Both,
-                Depth = 1,
-                Colour = Colour4.Transparent,
-            });
+                innerContainer = new Container()
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    CornerRadius = 5f,
+                    Masking = true,
+                    Children = new Drawable[]
+                    {
+                        contentContainer,
+                        background = new Box()
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Depth = 1,
+                            Colour = Colour4.Transparent,
+                        }
+                    },
+                },
+
+            };
             TextContainer.Height = 0.8f;
-            TextContainer.Margin = new MarginPadding() { Left = 3f };
+            TextContainer.Masking = true;
             BackgroundColour = Colour4.FromHex("2A2A2A");
         }
 

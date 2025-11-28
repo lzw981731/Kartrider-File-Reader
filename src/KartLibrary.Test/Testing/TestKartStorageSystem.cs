@@ -1,9 +1,8 @@
 ﻿using KartLibrary.Consts;
-using KartLibrary.Game.Engine.Relements;
 using KartLibrary.Game.Engine.Track;
 using KartLibrary.File;
 using KartLibrary.IO;
-using KartLibrary.Tests.Command;
+using eP.Command;
 using KartLibrary.Tests.Utilities;
 using System;
 using System.Collections.Generic;
@@ -16,6 +15,17 @@ using System.Numerics;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
+using eP.Testing;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using KartCity.Common.FileType;
+using KartCity.Common.IO;
+using KartCity.Common.IO.SmartStream;
+using KartCity.Common.Xml;
+using KartLibrary.Engine.Relements;
+using KartLibrary.Game.Item;
+using KartLibrary.Game.Kart;
+using KartLibrary.Xml;
 
 namespace KartLibrary.Tests.Testing
 {
@@ -25,40 +35,43 @@ namespace KartLibrary.Tests.Testing
 
         private KartStorageFolder _currentFolder;
 
-        private string _dataFolderPath = @"H:\game\KartRider\Data";
+        private string _dataFolderPath = @"";
 
         private CountryCode _region = CountryCode.KR;
 
         private Dictionary<string, Process> _openedTmpFiles = new Dictionary<string, Process>();
 
+        protected KartStorageSystem StorageSystem => _storageSystem;
+        
         public TestKartStorageSystem()
         {
-            addStep("Construct KartStorageSystem", () =>
+            AddStep("Construct KartStorageSystem", () =>
             {
                 KartStorageSystemBuilder kartStorageSystemBuilder = new KartStorageSystemBuilder();
                 _storageSystem =
                     kartStorageSystemBuilder
                         .UseRho()
                         .UseRho5()
+                        .UsePackFolderListFile()
                         .SetDataPath(_dataFolderPath)
                         .SetClientRegion(_region)
                         .Build();
             });
-            addStep("Close Opened KartStorageSystem", () =>
+            AddStep("Close Opened KartStorageSystem", () =>
             {
                 if(_storageSystem.IsInitialized)
                     _storageSystem.Close();
             });
-            addStep("Initialize KartStorageSystem", () =>
+            AddStep("Initialize KartStorageSystem", () =>
             {
                 _storageSystem.Initialize();
                 _currentFolder = _storageSystem.RootFolder;
             });
-            addStep("Close KartStorageSystem", () =>
+            AddStep("Close KartStorageSystem", () =>
             {
                 _storageSystem.Close();
             });
-            addStep("Initialize KartStorageSystem and set current folder", () =>
+            AddStep("Initialize KartStorageSystem and set current folder", () =>
             {
                 _storageSystem.Initialize();
                 _currentFolder = _storageSystem.RootFolder;
@@ -89,7 +102,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("init", "Initialize KartStorageSystem")]
-        private CommandExecuteResult commandInitialize(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected CommandExecuteResult commandInitialize(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (_storageSystem is not null)
                 if (_storageSystem.IsInitialized)
@@ -117,6 +130,7 @@ namespace KartLibrary.Tests.Testing
                 kartStorageSystemBuilder
                     .UseRho()
                     .UseRho5()
+                    //.UsePackFolderListFile()
                     .SetDataPath(_dataFolderPath)
                     .SetClientRegion(_region)
                     .Build();
@@ -127,7 +141,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [CommandAutoComplete("init")]
-        private string[] commandAutoComplInitialize(CommandArgumentQueue argumentQueue)
+        protected  string[] commandAutoComplInitialize(CommandArgumentQueue argumentQueue)
         {
             if(argumentQueue.Count > 0)
             {
@@ -144,14 +158,10 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("set", "Set environment variable of this stage.")]
-        private CommandExecuteResult commandSet(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandSet(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if(argumentQueue.Count == 0)
             {
-                commandConsole.WriteLine("Usage: set <variable_name> <variable_value>");
-                commandConsole.WriteLine("\tavailable variables:");
-                commandConsole.WriteLine("\t\tregion: korea, china, taiwan");
-                commandConsole.WriteLine("\t\tdatapath");
                 return new CommandExecuteResult(ResultType.Success, "");
             }
             else
@@ -181,7 +191,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("ls", "List all contents of current folder or specific folder.")]
-        private CommandExecuteResult commandListFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandListFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (_storageSystem is null || !_storageSystem.IsInitialized)
                 return new CommandExecuteResult(ResultType.Failure, "KartStorageSystem has not been initialized.");
@@ -211,7 +221,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("cd", "Change current work folder.")]
-        private CommandExecuteResult commandChangeFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandChangeFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (argumentQueue.Count == 0)
                 return new CommandExecuteResult(ResultType.Success, "");
@@ -227,7 +237,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [CommandAutoComplete("cd")]
-        private string[] commandAutoComplChangeFolder(CommandArgumentQueue argumentQueue)
+        protected  string[] commandAutoComplChangeFolder(CommandArgumentQueue argumentQueue)
         {
             List<string> suggestions = new List<string>();
             if (_storageSystem is null || !_storageSystem.IsInitialized)
@@ -250,7 +260,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("pwd", "Print work folder.")]
-        private CommandExecuteResult commandPrintWorkFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandPrintWorkFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (_storageSystem is null || !_storageSystem.IsInitialized)
                 return new CommandExecuteResult(ResultType.Failure, "KartStorageSystem has not been initialized.");
@@ -261,7 +271,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [Command("open", "Open specific file")]
-        private CommandExecuteResult commandOpen(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandOpen(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (_storageSystem is null || !_storageSystem.IsInitialized)
                 return new CommandExecuteResult(ResultType.Failure, "KartStorageSystem has not been initialized.");
@@ -297,7 +307,7 @@ namespace KartLibrary.Tests.Testing
                 {
                     StartInfo = new ProcessStartInfo()
                     {
-                        FileName = "open",
+                        FileName = "xdg-open",
                         Arguments = $"\"{tmpFileName}\"",
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
@@ -315,7 +325,7 @@ namespace KartLibrary.Tests.Testing
         }
 
         [CommandAutoComplete("open")]
-        private string[] commandAutoComplOpen(CommandArgumentQueue argumentQueue)
+        protected  string[] commandAutoComplOpen(CommandArgumentQueue argumentQueue)
         {
             List<string> suggestions = new List<string>();
             if (_storageSystem is null || !_storageSystem.IsInitialized)
@@ -337,15 +347,89 @@ namespace KartLibrary.Tests.Testing
             return suggestions.ToArray();
         }
 
+        [Command("extract", "")]
+        protected  CommandExecuteResult commandExport(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            if (!Directory.Exists("extract"))
+                Directory.CreateDirectory("extract");
+            string extractDirectory = Path.Combine(Environment.CurrentDirectory, "extract");
+            bool autoConvertBml = false;
+            while (argumentQueue.Count > 0)
+            {
+                if (argumentQueue.CommandArgumentType == CommandArgumentType.ArgumentString)
+                    argumentQueue.PopArgumentString();
+                else
+                {
+                    string optionStr = argumentQueue.PopOption();
+                    if (optionStr == "bxml")
+                    {
+                        autoConvertBml = true;
+                    } 
+                }
+            }
+
+            if (autoConvertBml)
+            {
+                commandConsole.WriteLine("Auto Convert to bml");
+            }
+            Queue<(string, KartStorageFolder)> queue = new Queue<(string, KartStorageFolder)>();
+            queue.Enqueue((extractDirectory, _storageSystem.RootFolder));
+            while (queue.Count > 0)
+            {
+                var obj = queue.Dequeue();
+                if (!Directory.Exists(obj.Item1))
+                    Directory.CreateDirectory(obj.Item1);
+                foreach (var folder in obj.Item2.Folders)
+                {
+                    queue.Enqueue((Path.Combine(obj.Item1, folder.Name), folder));
+                }
+
+                foreach (var file in obj.Item2.Files)
+                {
+                    using (Stream stream = file.CreateStream())
+                    {
+                        Stream inputStream = stream;
+                        string outFileName = file.Name;
+                        if (file.Name.EndsWith(".bml") && autoConvertBml)
+                        {
+                            try
+                            {
+                                BinaryReader bmlReader = new BinaryReader(stream);
+                                BinaryXmlTag bmlTag = bmlReader.ReadBinaryXmlTag(Encoding.Unicode);
+                                inputStream = new MemoryStream(Encoding.UTF8.GetBytes(bmlTag.ToString()));
+                                outFileName = outFileName[..^4] + ".xml";
+                            }
+                            catch
+                            {
+                                stream.Seek(0, SeekOrigin.Begin);
+                                commandConsole.WriteLine($"Failed to convert {file.FullName} to xml.");
+                            }
+                        }
+                        string outPath = Path.Combine(obj.Item1, outFileName);
+                        using (FileStream fileStream = new FileStream(outPath, FileMode.Create))
+                        {
+                            inputStream.CopyTo(fileStream, 16384);
+                        }
+
+                        if (inputStream != stream)
+                            inputStream.Close();
+                    }
+                }
+            }
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+        
         [Command("try-allRho5", "")]
-        private CommandExecuteResult commandTryAllRho5(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        protected  CommandExecuteResult commandTryAllRho5(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (_storageSystem is null)
                 return new CommandExecuteResult(ResultType.Failure, "");
             if (!Directory.Exists("try-allRho5"))
                 Directory.CreateDirectory("try-allRho5");
             int dataPackNum = 1;
-            foreach(KartStorageFolder folder in _storageSystem.RootFolder.Folders)
+            foreach(KartStorageFolder folder in _storageSystem.RootFolder.Folders.OrderBy(x => x.Name))
             {
                 Rho5Archive rho5Archive = new Rho5Archive();
                 Rho5Folder mountFolder = new Rho5Folder();
@@ -384,6 +468,193 @@ namespace KartLibrary.Tests.Testing
             return new CommandExecuteResult(ResultType.Success, "");
         }
 
+        [Command("try-allRho", "")]
+        protected CommandExecuteResult commandTryAllRho(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            if (!Directory.Exists("try-allRho"))
+                Directory.CreateDirectory("try-allRho");
+            BinaryXmlTag rootPackFolder = new BinaryXmlTag("PackFolder")
+                .SetAttributeContinue("name", "KartRider");
+            foreach (KartStorageFolder folder in _storageSystem.RootFolder.Folders)
+            {
+                if(folder.Name.EndsWith("_"))
+                    continue;
+                using (RhoArchive rhoArchive = new RhoArchive())
+                {
+                    Queue<(RhoFolder, KartStorageFolder)> queue = new Queue<(RhoFolder, KartStorageFolder)>();
+                    queue.Enqueue((rhoArchive.RootFolder, folder));
+                    while (queue.Count > 0)
+                    {
+                        var curObj = queue.Dequeue();
+                        foreach (var childFolder in curObj.Item2.Folders)
+                        {
+                            RhoFolder newFolder = new RhoFolder();
+                            newFolder.Name = childFolder.Name;
+                            curObj.Item1.AddFolder(newFolder);
+                            queue.Enqueue((newFolder, childFolder));
+                        }
+
+                        foreach (var childFile in curObj.Item2.Files)
+                        {
+                            RhoFile newFile = new RhoFile();
+                            byte[] data = childFile.GetBytes();
+                            newFile.DataSource = new ByteArrayDataSource(data);
+                            newFile.Name = childFile.Name;
+                            curObj.Item1.AddFile(newFile);
+                        }
+                    }
+
+                    string outFileName = $"{folder.Name}.rho";
+                    string outPath = Path.Combine("try-allRho", outFileName);
+                    rhoArchive.SaveTo(outPath);
+                    rootPackFolder.AddContinue(
+                        new BinaryXmlTag("RhoFolder")
+                            .SetAttributeContinue("name", folder.Name)
+                            .SetAttributeContinue("fileName", outFileName)
+                            .SetAttributeContinue("key", $"{rhoArchive.Key}")
+                            .SetAttributeContinue("dataHash", $"{rhoArchive.DataHash}")
+                            .SetAttributeContinue("mediaSize", $"{new FileInfo(outPath).Length}")
+                    );
+                }
+            }
+            byte[] aaaData = rootPackFolder.ToBinary(Encoding.Unicode);
+            using (FileStream outFile = new FileStream(Path.Combine("try-allRho", "aaa.pk"), FileMode.Create))
+            {
+                BinaryWriter writer = new BinaryWriter(outFile);
+                writer.WriteAsSmartStreamData(aaaData, SmartStreamMode.CompressedEncrypted, true, 0x36699336);
+            }
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+        
+        [Command("testKartMan", "")]
+        protected  CommandExecuteResult commandTestKartMan(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            KartManager kartManager = new KartManager();
+            kartManager.Initialize(_storageSystem);
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+        
+        [Command("testItemTable", "")]
+        private  CommandExecuteResult commandTestItemTable(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            ItemTable itemTable = new ItemTable();
+            itemTable.Initialize(_storageSystem);
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+
+        [Command("banned-chker", "To check what words was banned.")]
+        private CommandExecuteResult commandBannedChker(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            string[] regionCodes = new [] { "kr", "jp", "cn", "tw" };
+            Dictionary<string, Dictionary<int, Dictionary<uint, HashSet<string>>>> bannedTable = new Dictionary<string, Dictionary<int, Dictionary<uint, HashSet<string>>>>();
+            foreach (string regionCode in regionCodes)
+            {
+                KartStorageFile? curseTable = _storageSystem.GetFile($"etc_/curseFilter@{regionCode}.xml");
+                if (curseTable is not null)
+                {
+                    BinaryXmlTag curseFilterContent = curseTable.ReadXml();
+                    var words = curseFilterContent.Children.Where(x => x.Name.ToLower() == "word");
+                
+                    foreach (var word in words)
+                    {
+                        string? wordText = ((string?)word.GetAttribute("from"))?.ToLower();
+                        if (wordText is not null)
+                        {
+                            bannedTable.TryAdd(regionCode, new Dictionary<int, Dictionary<uint, HashSet<string>>>());
+                            bannedTable[regionCode].TryAdd(wordText.Length, new Dictionary<uint, HashSet<string>>());
+                            uint textHash = Adler.Adler32(0, Encoding.Unicode.GetBytes(wordText), 0, wordText.Length << 1);
+                            bannedTable[regionCode][wordText.Length].TryAdd(textHash, new HashSet<string>());
+                            bannedTable[regionCode][wordText.Length][textHash].Add(wordText);
+                        }
+                    }
+                }
+            }
+
+            if (bannedTable.Count == 0)
+                return new CommandExecuteResult(ResultType.Failure, "There are no any valid curse table in the game files you given.");
+            
+            bool isEnd = false;
+            while (!isEnd)
+            {
+                commandConsole.Write("Enter Sentence:  ");
+                string sentence = commandConsole.ReadLine() ?? "";
+                if (sentence.Length > 0)
+                {
+                    foreach (var regionBannedTablePair in bannedTable)
+                    {
+                        commandConsole.Write($"Result ({regionBannedTablePair.Key}): ");
+                        for (int i = 0; i < sentence.Length; i++)
+                        {
+                            int maxMatchLen = 0;
+                            foreach (var pair in regionBannedTablePair.Value)
+                            {
+                                if ((i + pair.Key) <= sentence.Length)
+                                {
+                                    string substr = sentence.Substring(i, pair.Key).ToLower();
+                                    uint textHash = Adler.Adler32(0, Encoding.Unicode.GetBytes(substr), 0, substr.Length << 1);
+                                    if (pair.Value.TryGetValue(textHash, out var hashSet) && (hashSet?.Contains(substr) ??
+                                        false))
+                                    {
+                                        maxMatchLen = Math.Max(maxMatchLen, pair.Key);
+                                    }
+                                }
+                            }
+
+                            if (maxMatchLen > 0)
+                            {
+                                commandConsole.SetBackgroundColor(ConsoleColor.Red);
+                                commandConsole.SetForegroundColor(ConsoleColor.Black);
+                                string substr = sentence.Substring(i, maxMatchLen);
+                                commandConsole.Write(substr);
+                                commandConsole.SetDefaultColor();
+                                
+                                i += (maxMatchLen - 1);
+                            }
+                            else
+                            {
+                                commandConsole.Write(sentence.Substring(i, 1));
+                            }
+                        }
+                        commandConsole.WriteLine("");
+                    }
+                }
+            }
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+
+        [Command("dumpAllXmlNames")]
+        private CommandExecuteResult commandDumpAllXmlNames(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (_storageSystem is null)
+                return new CommandExecuteResult(ResultType.Failure, "");
+            Queue<KartStorageFolder> folders = new Queue<KartStorageFolder>();
+            HashSet<string> fileNames = new HashSet<string>();
+            folders.Enqueue(_storageSystem.RootFolder);
+            while (folders.Count > 0)
+            {
+                KartStorageFolder curFolder = folders.Dequeue();
+                foreach(var childFolder in curFolder.Folders)
+                    folders.Enqueue(childFolder);
+                foreach (var childFile in curFolder.Files)
+                {
+                    if (childFile.Name.EndsWith("bml") || childFile.Name.EndsWith("xml") ||
+                        childFile.Name.EndsWith("kml"))
+                        fileNames.Add(childFile.Name);
+                }
+            }
+            foreach(var fileName in fileNames)
+                commandConsole.WriteLine(fileName);
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+
         [Command("try-track", "Try to open track model.")]
         private CommandExecuteResult commandTryTrack(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
@@ -407,7 +678,7 @@ namespace KartLibrary.Tests.Testing
                 Dictionary<short, KartObject> decodedKartObjectMap = new Dictionary<short, KartObject>();
                 Dictionary<short, object> decodedFieldMap = new Dictionary<short, object>();
 
-                TrackContainer trackContainer = reader.ReadKartObject<TrackContainer>(decodedKartObjectMap, decodedFieldMap);
+                TrackContainer trackContainer = reader.ReadKartObject<TrackContainer>(new(BufferMode.ForRead));
                 Relement rootRelement = trackContainer.TrackScene;
                 
                 string relementStr = rootRelement.ToString();
@@ -481,7 +752,7 @@ namespace KartLibrary.Tests.Testing
                 Dictionary<short, KartObject> decodedKartObjectMap = new Dictionary<short, KartObject>();
                 Dictionary<short, object> decodedFieldMap = new Dictionary<short, object>();
 
-                ReKart reKart = reader.ReadKartObject<ReKart>(decodedKartObjectMap, decodedFieldMap);
+                ReKart reKart = reader.ReadKartObject<ReKart>(new(BufferMode.ForRead));
                 string relementStr = reKart.ToString();
 
                 if (!Directory.Exists("try"))
@@ -532,7 +803,7 @@ namespace KartLibrary.Tests.Testing
 
         private void convertRelementToObj(Relement relement, Matrix4x4 transform, List<MeshObj> meshObjs)
         {
-            transform = Matrix4x4.CreateScale(relement.Scale) * relement.Transform * Matrix4x4.CreateTranslation(relement.Position) * transform;
+            transform = Matrix4x4.CreateScale(relement.Scale) * relement.Rotation * Matrix4x4.CreateTranslation(relement.Position) * transform;
             if(relement is ReTriList reTriList)
             {
                 MeshObj newObj = new MeshObj();
@@ -550,8 +821,8 @@ namespace KartLibrary.Tests.Testing
                     face.VertexIndexes[2] = face.TexCoordIndexes[2] = reTriList.Vertex.Indexes[i + 2];
                     newObj.Faces.Add(face);
                 }
-                if (reTriList.Tex is not null && reTriList.Tex.u3 is not null)
-                    newObj.Merterial.TextureName = reTriList.Tex.u3;
+                if (reTriList.Tex is not null && reTriList.Tex.TextureName is not null)
+                    newObj.Merterial.TextureName = reTriList.Tex.TextureName;
                 meshObjs.Add(newObj);
             }
             else if (relement is ReTriStrip reTriStrip)
@@ -571,8 +842,8 @@ namespace KartLibrary.Tests.Testing
                     face.VertexIndexes[2] = face.TexCoordIndexes[2] = reTriStrip.Vertex.Indexes[i];
                     newObj.Faces.Add(face);
                 }
-                if (reTriStrip.Tex is not null && reTriStrip.Tex.u3 is not null)
-                    newObj.Merterial.TextureName = reTriStrip.Tex.u3;
+                if (reTriStrip.Tex is not null && reTriStrip.Tex.TextureName is not null)
+                    newObj.Merterial.TextureName = reTriStrip.Tex.TextureName;
                 meshObjs.Add(newObj);
             }
             else if(relement is ReToonRigid reToonRigid)
@@ -769,6 +1040,8 @@ namespace KartLibrary.Tests.Testing
             }
         }
 
+        
+        
         private class MeshObj
         {
             public string Name = "";

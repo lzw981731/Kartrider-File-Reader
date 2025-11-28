@@ -75,7 +75,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                     listBoxItemText = new SpriteText()
                     {
                         AlwaysPresent = true,
-                        Font = KCSFont.Default.With(size : 17f),
+                        Font = KCSFont.Default,
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
                         Shadow = true,

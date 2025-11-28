@@ -13,7 +13,10 @@ namespace RhoLoader
 {
     public partial class ExtractOption : Form
     {
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ExtractOptionToken SelectOption { get; set; } = ExtractOptionToken.None;
+        
         public ExtractOption()
         {
             InitializeComponent();
@@ -28,9 +31,11 @@ namespace RhoLoader
         private void action_submit(object sender, EventArgs e)
         {
             if (conDds.Checked)
-                SelectOption |= ExtractOptionToken.ConvertDDS;
+                SelectOption |= ExtractOptionToken.ConvertDds;
             if (conBml.Checked)
-                SelectOption |= ExtractOptionToken.ConvertBML;
+                SelectOption |= ExtractOptionToken.ConvertBml;
+            if (conTgs.Checked)
+                SelectOption |= ExtractOptionToken.ConvertTga;
             this.DialogResult = DialogResult.OK;
         }
     }
@@ -38,8 +43,9 @@ namespace RhoLoader
     public enum ExtractOptionToken
     {
         None = 0,
-        ConvertDDS = 1,
-        ConvertBML = 2,
-        ConvertKSV = 4
+        ConvertDds = 1,
+        ConvertBml = 2,
+        ConvertTga = 4,
+        ConvertKsv = 8
     }
 }

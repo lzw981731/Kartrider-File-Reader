@@ -6,7 +6,9 @@ using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
+using KartCityStudio.Game.Graphics.Sprites;
 using osu.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
@@ -16,6 +18,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Layout;
 using osu.Framework.Localisation;
+using osu.Framework.Logging;
 using osu.Framework.Threading;
 using Vulkan;
 
@@ -42,6 +45,18 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         public ListViewItemList Items { get; } = new ListViewItemList();
         public ListViewHeaderItemList Headers { get; } = new ListViewHeaderItemList();
 
+        public Easing LayoutEasing
+        {
+            get => itemsFlow.LayoutEasing;
+            set => itemsFlow.LayoutEasing = value;
+        }
+
+        public float LayoutDuration
+        {
+            get => itemsFlow.LayoutDuration;
+            set => itemsFlow.LayoutDuration = value;
+        }
+
         public Colour4 BackgroundColour
         {
             get => backgroundColour;
@@ -60,6 +75,12 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         public ListViewItem? SelectedItem => selectedListViewItem?.Item;
 
+        public new bool Masking
+        {
+            get => MaskingContainer.Masking;
+            set => MaskingContainer.Masking = value;
+        }
+
         public new float CornerRadius
         {
             get => MaskingContainer.CornerRadius;
@@ -75,13 +96,13 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         protected ListView()
         {
             Items.OnInsert = onItemsInsert;
+            Items.OnInsertRange = onItemsInsertRange;
             Items.OnRemove = onItemsRemove;
             Items.OnClear = onItemsClear;
 
             Headers.OnInsert = onHeadersInsert;
             Headers.OnRemove = onHeadersRemove;
             Headers.OnClear = onHeadersClear;
-
 
             InternalChild = MaskingContainer = new Container
             {
@@ -91,34 +112,55 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 Children = new Drawable[]
                 {
                     Background = CreateBackground(),
-                    ContentContainer = CreateScrollContainer(Direction.Vertical).With(d =>
+                    new GridContainer()
                     {
-                        d.RelativeSizeAxes = Axes.Both;
-                        d.RelativePositionAxes = Axes.X;
-                        d.Masking = true;
-                        d.Child = itemsFlow = new ItemsFlow() { Direction = FillDirection.Vertical };
-                        d.Padding = new MarginPadding() { Top = 27f };
-                    }),
-                    headerRowContainer = new Container()
-                    {
-                        RelativeSizeAxes= Axes.X,
-                        Height = 27f,
-                        Children = new Drawable[]
+                        RelativeSizeAxes = Axes.Both,
+                        RowDimensions = new Dimension[]
                         {
-                            headerBackground = new Box()
-                            {
-                                RelativeSizeAxes = Axes.Both,
-                                Colour = Colour4.FromHex("1A1A1A")
-                            },
-                            headersFlow = new HeadersFlow()
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
-                                Anchor = Anchor.CentreLeft,
-                                Origin = Anchor.CentreLeft,
-                                Direction = FillDirection.Horizontal
-                            }
+                            new Dimension(mode: GridSizeMode.Absolute, size: 27f),
+                            new Dimension(mode: GridSizeMode.Distributed),
                         },
+                        ColumnDimensions = new Dimension[]
+                        {
+                            new Dimension(mode: GridSizeMode.Distributed)
+                        },
+                        Content = new Drawable[][]
+                        {
+                            new Drawable[]
+                            {
+                                headerRowContainer = new Container()
+                                {
+                                    RelativeSizeAxes= Axes.X,
+                                    Height = 27f,
+                                    Children = new Drawable[]
+                                    {
+                                        headerBackground = new Box()
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Colour = Colour4.FromHex("1A1A1A")
+                                        },
+                                        headersFlow = new HeadersFlow()
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Direction = FillDirection.Horizontal
+                                        }
+                                    },
+                                },
+                            },
+                            new Drawable[]
+                            {
+                                ContentContainer = CreateScrollContainer(Direction.Vertical).With(d =>
+                                {
+                                    d.RelativeSizeAxes = Axes.Both;
+                                    d.RelativePositionAxes = Axes.X;
+                                    d.Masking = true;
+                                    d.Child = itemsFlow = new ItemsFlow() { Direction = FillDirection.Vertical };
+                                })
+                            }
+                        }
                     },
                 }
             };
@@ -180,7 +222,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                     if (pos > 0)
                     {
                         selectedListViewItem.State = ListViewItemState.NotSelected;
-                        
+
                         DrawableListViewItem nextSelectedItem = itemsFlow[(int)pos - 1];
                         selectedListViewItem = nextSelectedItem;
                     }
@@ -203,8 +245,8 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         protected override void Dispose(bool isDisposing)
         {
-            Items.Clear();
-            Headers.Clear();
+            Scheduler.AddOnce(Items.Clear);
+            Scheduler.AddOnce(Headers.Clear);
             GC.Collect();
             base.Dispose(isDisposing);
         }
@@ -227,11 +269,36 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             ((IItemsFlow)itemsFlow).SizeCache.Invalidate();
         }
 
+        private void onItemsInsertRange(int index, IEnumerable<ListViewItem> itemsToInsert)
+        {
+            int itemCount = itemsToInsert.Count();
+
+            var items = Children.OrderBy(itemsFlow.GetLayoutPosition).ToList();
+
+            for (int i = index; i < items.Count; i++)
+                itemsFlow.SetLayoutPosition(items[i], i + itemCount);
+
+            foreach (var itemToInsert in itemsToInsert)
+            {
+                itemToInsert.ClickAction.Value = onItemClicked;
+                itemToInsert.DoubleClickAction.Value = onItemDoubleClicked;
+                DrawableListViewItem drawableItem = CreateDrawableListViewItem(itemToInsert);
+                drawableItem.Clicked = onDrawableItemClicked;
+                drawableItem.UpdateListViewHeader(Headers);
+                itemsFlow.Insert(index++, drawableItem);
+            }
+
+            ((IItemsFlow)itemsFlow).SizeCache.Invalidate();
+        }
+
         private void onItemsRemove(int index)
         {
             var items = Children.OrderBy(itemsFlow.GetLayoutPosition).ToList();
             for (int i = index + 1; i < items.Count; i++)
                 itemsFlow.SetLayoutPosition(items[i], i - 1);
+            var removedItem = items[index];
+            if (selectedListViewItem == removedItem)
+                selectedListViewItem = null;
             itemsFlow.Remove(items[index], true);
             ((IItemsFlow)itemsFlow).SizeCache.Invalidate();
         }
@@ -239,6 +306,8 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         private void onItemsClear()
         {
             itemsFlow.Clear();
+            selectedListViewItem = null;
+            //itemsFlow.Clear();
         }
 
         private void onItemClicked(ListViewItem clickedItem)
@@ -264,7 +333,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         {
             DrawableListViewHeaderItem drawableHeaderItem = CreateDrawableListViewHeaderItem(item).With(d =>
             {
-                
+
             });
             drawableHeaderItem.Clicked = onHeaderClicked;
 
@@ -297,7 +366,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         private void onHeaderClicked(DrawableListViewHeaderItem clickedHeader)
         {
-            
+
         }
 
         private void updateHeaderToItems()
@@ -341,6 +410,12 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             }
 
             public bool IsSelected => state == ListViewItemState.Selected;
+
+            public override void Show()
+            {
+                base.Show();
+                Logger.Log($"{Item.Texts.First().Value} show.");
+            }
 
             public Colour4 BackgroundColour
             {
@@ -408,6 +483,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 RelativeSizeAxes = Axes.X;
                 AutoSizeAxes = Axes.Y;
 
+
                 InternalChildren = new Drawable[]
                 {
                     Background = CreateBackground(),
@@ -458,6 +534,23 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                             break;
                     }
                 };
+
+                if (!Item.Visible.Value)
+                    this.FadeOut();
+
+                Item.Visible.ValueChanged += e =>
+                {
+                    if (e.NewValue)
+                    {
+                        MakeVisible();;
+                    }
+                    else
+                    {
+                        MakeInvisible();
+                    }
+                };
+
+                Item.IconName.ValueChanged += iconNameChanged;
             }
 
             protected virtual void UpdateBackgroundColour()
@@ -479,6 +572,16 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             protected virtual Drawable CreateBackground() => new Box() { RelativeSizeAxes = Axes.Both };
 
             protected abstract Drawable CreateContent();
+
+            protected virtual void MakeVisible()
+            {
+                this.FadeIn();
+            }
+
+            protected virtual void MakeInvisible()
+            {
+                this.FadeOut();
+            }
 
             protected override bool OnHover(HoverEvent e)
             {
@@ -544,11 +647,30 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                         colNameToContent.Add(headerItem.Name, content);
                     }
                     contentContainer.Width = headerItem.FieldWidth.Value;
+                    if (contentContainer is Container { Child: IHasIcon iconContent })
+                    {
+                        if (i == 0)
+                        {
+                            iconContent.IconTextureName = Item.IconName.Value;
+                        }
+                        else
+                        {
+                            iconContent.IconTextureName = "";
+                        }
+                    }
                 }
                 foreach (KeyValuePair<string, Drawable> keyValuePair in contentMap)
                 {
                     colNameToContent.Remove(keyValuePair.Key);
                     ContentsContainer.Remove(keyValuePair.Value, true);
+                }
+            }
+
+            private void iconNameChanged(ValueChangedEvent<string> e)
+            {
+                if (ContentsContainer.Count > 0 && ContentsContainer[0] is Container { Child: IHasIcon iconContent })
+                {
+                    iconContent.IconTextureName = e.NewValue;
                 }
             }
         }
@@ -716,9 +838,10 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         private readonly HashSet<ListViewItem> itemSearchingCache = new HashSet<ListViewItem>();
         private readonly List<ListViewItem> items = new List<ListViewItem>();
 
-        internal Action<int, ListViewItem> OnInsert;
-        internal Action<int> OnRemove;
-        internal Action OnClear;
+        internal Action<int, ListViewItem>? OnInsert;
+        internal Action<int, IEnumerable<ListViewItem>>? OnInsertRange;
+        internal Action<int>? OnRemove;
+        internal Action? OnClear;
 
         public int Count => items.Count;
 
@@ -734,11 +857,16 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 RemoveAt(index);
                 Insert(index, value);
             }
-        } 
+        }
 
         public void Add(ListViewItem item)
         {
             Insert(Count, item);
+        }
+
+        public void AddRange(IEnumerable<ListViewItem> itemsToAdd)
+        {
+            InsertRange(Count, itemsToAdd);
         }
 
         public void Clear()
@@ -765,7 +893,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 if (items[i] == item)
                 {
                     RemoveAt(i);
-                }    
+                }
             return true;
         }
 
@@ -788,6 +916,21 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         {
             items.Insert(index, item);
             OnInsert?.Invoke(index, item);
+        }
+
+        public void InsertRange(int index, IEnumerable<ListViewItem> itemsToInsert)
+        {
+            var listViewItems = itemsToInsert as ListViewItem[] ?? itemsToInsert.ToArray();
+            items.InsertRange(index, listViewItems);
+            if (OnInsertRange is not null)
+            {
+                OnInsertRange.Invoke(index, listViewItems);
+            }
+            else
+            {
+                foreach(var item in listViewItems)
+                    OnInsert?.Invoke(index++, item);
+            }
         }
 
         public void RemoveAt(int index)

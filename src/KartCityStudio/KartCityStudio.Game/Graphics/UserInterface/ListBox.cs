@@ -54,6 +54,19 @@ namespace KartCityStudio.Game.Graphics.UserInterface
 
         protected internal IReadOnlyList<DrawableListBoxItem> Children => itemsFlow.Children;
 
+
+        public Easing LayoutEasing
+        {
+            get => itemsFlow.LayoutEasing;
+            set => itemsFlow.LayoutEasing = value;
+        }
+
+        public float LayoutDuration
+        {
+            get => itemsFlow.LayoutDuration;
+            set => itemsFlow.LayoutDuration = value;
+        }
+
         protected ListBox()
         {
             Items.OnInsert = onItemsInsert;
@@ -281,13 +294,13 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             protected override bool OnClick(ClickEvent e)
             {
                 Clicked?.Invoke(this);
-                Item.ClickAction.Value?.Invoke();
+                Item.ClickAction.Value?.Invoke(this.Item);
                 return true;
             }
 
             protected override bool OnDoubleClick(DoubleClickEvent e)
             {
-                Item.DoubleClickAction.Value?.Invoke();
+                Item.DoubleClickAction.Value?.Invoke(this.Item);
                 return true;
             }
         }
@@ -331,7 +344,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 RemoveAt(index);
                 Insert(index, value);
             }
-        } 
+        }
 
         public void Add(ListBoxItem item)
         {
@@ -362,7 +375,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 if (items[i] == item)
                 {
                     RemoveAt(i);
-                }    
+                }
             return true;
         }
 

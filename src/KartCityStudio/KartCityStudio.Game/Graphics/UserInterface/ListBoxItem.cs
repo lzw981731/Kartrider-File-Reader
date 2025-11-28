@@ -12,15 +12,18 @@ namespace KartCityStudio.Game.Graphics.UserInterface
     {
         public readonly Bindable<LocalisableString> Text = new Bindable<LocalisableString>(string.Empty);
 
-        public readonly Bindable<Action?> ClickAction = new Bindable<Action?>();
+        public readonly Bindable<Action<ListBoxItem>?> ClickAction = new Bindable<Action<ListBoxItem>?>();
 
-        public readonly Bindable<Action?> DoubleClickAction = new Bindable<Action?>();
+        public readonly Bindable<Action<ListBoxItem>?> DoubleClickAction = new Bindable<Action<ListBoxItem>?>();
 
-        public ListBoxItem(LocalisableString text, Action? clickAction = null, Action? doubleClickAction = null)
+        public object Tag;
+
+        public ListBoxItem(LocalisableString text, Action<ListBoxItem>? clickAction = null, Action<ListBoxItem>? doubleClickAction = null, object tag = null)
         {
             Text.Value = text;
             ClickAction.Value = clickAction;
             DoubleClickAction.Value = doubleClickAction;
+            Tag = tag;
         }
     }
 }

@@ -3,9 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.IO;
 
 namespace KartLibrary.IO
 {
+    /// <summary>
+    /// Represent the::Object in KartRider.
+    /// It is a serializable object. 
+    /// </summary>
     public abstract class KartObject
     {
         protected KartObject() 
@@ -24,13 +29,14 @@ namespace KartLibrary.IO
             }
         }
 
-        public virtual void DecodeObject(BinaryReader reader, Dictionary<short, KartObject>? decodedObjectMap, Dictionary<short, object>? decodedFieldMap) 
+        public virtual void DecodeObject(BinaryReader reader, KartObjectBuffer? buffer) 
         {
             
         }
-        public virtual void EncodeObject(BinaryWriter writer, Dictionary<short, KartObject>? decodedObjectMap, Dictionary<short, object>? decodedFieldMap)
+        
+        public virtual void EncodeObject(BinaryWriter writer, KartObjectBuffer? buffer)
         {
-
+            
         }
     }
 }

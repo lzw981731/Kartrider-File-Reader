@@ -9,17 +9,21 @@ namespace KartLibrary.IO
 {
     public static class KartObjectManager
     {
-        private static Dictionary<uint, KartObjectInfo> registeredClasses = new Dictionary<uint, KartObjectInfo>();
+        private static bool _initialized = false;
+        private static Dictionary<uint, KartObjectInfo> _registeredClasses = new Dictionary<uint, KartObjectInfo>();
         /// <summary>
         /// Initialize <see cref="KartObjectManager"/>. Notes that it will register all classes that have <see cref="KartObjectImplementAttribute"/> attribute.
         /// </summary>
         public static void Initialize()
         {
+            if (_initialized)
+                return;
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach(Assembly assembly in assemblies)
                 foreach (TypeInfo type in 
-                    assembly.GetTypes().Select(x => x).Where(x => x.IsSubclassOf(typeof(KartObject)) && x.GetCustomAttribute(typeof(KartObjectImplementAttribute)) is not null))
+                    assembly.GetTypes().Select(x => x).Where(x => x.IsSubclassOf(typeof(KartObject)) && x.GetCustomAttribute(typeof(KartObjectImplementAttribute), false) is not null))
                     RegisterClass(type);
+            _initialized = true;
         }
 
         public static void RegisterClass<TRegisterClass>() where TRegisterClass : KartObject, new()
@@ -41,7 +45,7 @@ namespace KartLibrary.IO
             KartObjectInfo kartObjectInfo = new(type, constructorInfo);
             KartObject newObj = kartObjectInfo.CreateObject();
             uint classStamp = newObj.ClassStamp;
-            registeredClasses.Add(classStamp, kartObjectInfo);
+            _registeredClasses.Add(classStamp, kartObjectInfo);
         }
 
         public static void RegisterAssemblyClasses(Assembly assembly)
@@ -54,14 +58,18 @@ namespace KartLibrary.IO
 
         public static bool ContainsClass(uint classStamp)
         {
-            return registeredClasses.ContainsKey(classStamp);
+            if (!_initialized)
+                Initialize();
+            return _registeredClasses.ContainsKey(classStamp);
         }
 
-        public static T CreateObject<T>(uint ClassStamp) where T : KartObject, new()
+        public static T CreateObject<T>(uint ClassStamp) where T : KartObject
         {
-            if (!registeredClasses.ContainsKey(ClassStamp))
+            if (!_initialized)
+                Initialize();
+            if (!_registeredClasses.ContainsKey(ClassStamp))
                 throw new Exception($"cannot found type: {ClassStamp:x8}");
-            KartObjectInfo kartObjectInfo = registeredClasses[ClassStamp];
+            KartObjectInfo kartObjectInfo = _registeredClasses[ClassStamp];
             if (!kartObjectInfo.CanbeConvertTo(typeof(T)))
                 throw new InvalidCastException($"{kartObjectInfo.BaseType.Name} cannot be convert to {typeof(T).Name}");
             return (T)kartObjectInfo.CreateObject();
@@ -69,9 +77,11 @@ namespace KartLibrary.IO
 
         public static KartObject CreateObject(uint ClassStamp)
         {
-            if (!registeredClasses.ContainsKey(ClassStamp))
+            if (!_initialized)
+                Initialize();
+            if (!_registeredClasses.ContainsKey(ClassStamp))
                 throw new Exception($"cannot found type: {ClassStamp:x8}");
-            KartObjectInfo kartObjectInfo = registeredClasses[ClassStamp];
+            KartObjectInfo kartObjectInfo = _registeredClasses[ClassStamp];
             return kartObjectInfo.CreateObject();
         }
     }

@@ -1,12 +1,12 @@
 {
   "LanguageName": "zh-cn",
   "DisplayName": "简体中文",
-  "Author": ["eP Studio", "yoaan"],
-  "Font": [ "Microsoft YaHei UI" ],
+  "Author": ["yoaan" ,"eP Studio"],
+  "Font": [ "Noto Sans SC Medium", "Microsoft YaHei UI" ],
   "StringBags": [
     {
       "Name": "title",
-      "Value": "Rho载入器"
+      "Value": "KartCityLite"
     },
     {
       "Name": "menu_file",
@@ -17,8 +17,12 @@
       "Value": "开启"
     },
     {
-      "Name": "menu_openFolder",
-      "Value": "开启Data文件夾"
+      "Name": "menu_openFolderKr",
+      "Value": "开启跑跑Data文件夾"
+    },
+    {
+      "Name": "menu_openFolderRc",
+      "Value": "开启光线飞车Data文件夾"
     },
     {
       "Name": "menu_exit",
@@ -133,8 +137,8 @@
       "Value": "发生错误了，请稍后再试。"
     },
     {
-      "Name": "msg_PlzOpenRhoFileFirst",
-      "Value": "请先开启Rho文件，才可进行此操作"
+      "Name": "msg_PlzOpenFileFirst",
+      "Value": "请先开启文件，才可进行此操作"
     },
     {
       "Name": "msg_cancelExtract",

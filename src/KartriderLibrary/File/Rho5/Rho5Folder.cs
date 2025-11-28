@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.FileType;
 using KartLibrary.IO;
 
 namespace KartLibrary.File
@@ -151,7 +152,7 @@ namespace KartLibrary.File
             }
             else
             {
-                throw new Exception($"File: {path} can not be found.");
+                return null;
             }
         }
 

@@ -487,8 +487,11 @@ namespace KartLibrary.Encrypt
             for (int i = 0; i < 128; i++)
             {
                 int index = i % readsCount;
-                int mul = (int)((i * 0x55555556L) >> 32);
-                mul = (mul >> 0x1F) + mul;
+                // mul = i / 3;
+                // int mul = (int)((i * 0x55555556L) >> 32);
+                // mul = (int)(((long)((uint)mul) >> 0x1F)) + mul;
+                int mul = i / 3;
+                
                 mul = (byte)((byte)(i) - (byte)(mul * 3) + 2);
                 output[i] = (byte)(data[(newStr.Length - index - 1) * 2] * mul + i);
             }

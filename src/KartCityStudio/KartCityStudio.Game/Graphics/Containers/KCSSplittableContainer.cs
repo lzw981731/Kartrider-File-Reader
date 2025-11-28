@@ -21,7 +21,7 @@ namespace KartCityStudio.Game.Graphics.Containers
 
         protected partial class KCSSplitterBarContainer: SplitterBarContainer
         {
-            private const float splitterWidth = 6;
+            private const float splitterWidth = 8;
 
             private const float hovingAlpha = 0.3f;
             private const float clickedAlpha = 0.75f;
@@ -33,7 +33,7 @@ namespace KartCityStudio.Game.Graphics.Containers
             private bool isMouseDown = false;
             private bool isDragging = false;
 
-            
+
 
             public KCSSplitterBarContainer(Direction splitDirection): base(splitDirection)
             {
@@ -51,7 +51,7 @@ namespace KartCityStudio.Game.Graphics.Containers
                         Anchor = Anchor.TopLeft,
                         Origin = Anchor.TopLeft,
                         RelativeSizeAxes = Axes.Both,
-                        Size = new osuTK.Vector2(1f, 1f),
+                        Size = new osuTK.Vector2(1, 1f),
                         Colour = Colour4.FromHex("164863"),
                     }
                 };

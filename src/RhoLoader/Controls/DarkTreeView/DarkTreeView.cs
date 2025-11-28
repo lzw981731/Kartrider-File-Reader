@@ -8,12 +8,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace RhoLoader.Controls
 {
     public class DarkTreeView : TreeView
     {
+        
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new TreeViewDrawMode DrawMode { get => base.DrawMode; set { } }
         public DarkTreeView() : base()
         {

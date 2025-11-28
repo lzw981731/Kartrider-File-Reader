@@ -6,6 +6,9 @@ using KartLibrary.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using KartCity.Common.FileType;
+using KartCity.Common.IO;
+
 
 namespace KartLibrary.File
 {
@@ -53,6 +56,8 @@ namespace KartLibrary.File
                 {
                     _nameWithoutExt = _name;
                 }
+                
+                NotifyFileModified();
             }
         }
 
@@ -68,7 +73,11 @@ namespace KartLibrary.File
         public IDataSource? DataSource
         {
             internal get => _dataSource;
-            set => _dataSource = value;
+            set 
+            {
+                _dataSource = value;
+                NotifyFileModified();
+            }
         }
 
         public RhoFileProperty FileEncryptionProperty
@@ -167,7 +176,7 @@ namespace KartLibrary.File
             }
         }
 
-        internal uint getExtNum()
+        internal uint GetExtNum()
         {
             if (_extNum is null)
             {
@@ -188,13 +197,13 @@ namespace KartLibrary.File
             return _extNum.Value;
         }
 
-        internal uint getDataIndex(uint folderDataIndex)
+        internal uint GetDataIndex(uint folderDataIndex)
         {
             if (_dataIndexBase is null)
             {
                 byte[] fileNameEncData = Encoding.Unicode.GetBytes(_nameWithoutExt);
                 uint fileNameChksum = Adler.Adler32(0, fileNameEncData, 0, fileNameEncData.Length);
-                uint extNum = getExtNum();
+                uint extNum = GetExtNum();
                 _dataIndexBase = fileNameChksum + extNum;
             }
             if (folderDataIndex == 0xFFFFFFFFu)
@@ -202,10 +211,15 @@ namespace KartLibrary.File
             return _dataIndexBase.Value + folderDataIndex;
         }
 
-        internal void appliedChanges()
+        internal void AppliedChanges()
         {
             _originalName = _name;
             _originalSource = _dataSource;
+        }
+
+        private void NotifyFileModified()
+        {
+            Parent?.NotifyFileModified(this);
         }
         #endregion
     }

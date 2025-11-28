@@ -12,6 +12,10 @@ using Pfim;
 using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using KartCity.Common.Xml;
+using KartCityStudio.Common.Converter.Implements;
+using KartCityStudio.Common.Utility;
+using KartCityStudio.Game.Model;
 using RhoLoader.Setting;
 
 using KartLibrary.File;
@@ -20,22 +24,12 @@ namespace RhoLoader
 {
     public partial class ExtractFolder : Form
     {
-        private struct ExtractInfo
-        {
-            public string RelativePath { get; set; }
-            public string Out_filename { get; set; }
-            public PackFileInfo FileInfo { get; set; }
-            public FileConvertProcessor ConvertProcessor { get; set; }
-        }
-
-        private delegate byte[] FileConvertProcessor(byte[] input);
-
         private static class ExtractConverter
         {
             public static byte[] DDSConverter(byte[] inputData)
             {
                 var stream = new MemoryStream(inputData);
-                IImage image = Pfim.Pfim.FromStream(stream);
+                IImage image = Pfim.Pfimage.FromStream(stream);
                 var handle = GCHandle.Alloc(image.Data, GCHandleType.Pinned);
                 var d = Marshal.UnsafeAddrOfPinnedArrayElement(image.Data, 0);
                 PixelFormat pf;
@@ -73,9 +67,9 @@ namespace RhoLoader
 
             public static byte[] BMLConverter(byte[] inputData)
             {
-                KartLibrary.Xml.BinaryXmlDocument bxd = new KartLibrary.Xml.BinaryXmlDocument();
+                BinaryXmlDocument bxd = new BinaryXmlDocument();
                 bxd.Read(Encoding.GetEncoding("UTF-16"), inputData);
-                KartLibrary.Xml.BinaryXmlTag bxt = bxd.RootTag;
+                BinaryXmlTag bxt = bxd.RootTag;
                 string xmlData = bxt.ToString();
                 byte[] output = Encoding.UTF8.GetBytes(xmlData);
                 return output;
@@ -92,129 +86,31 @@ namespace RhoLoader
             }
         }
 
-        private PackFolderInfo _extract_folder;
-        private ExtractOptionToken _extract_option;
-        private Task _bg_worker;
-        private string _extract_path;
-        private int _totalFiles = 0;
+        private ExtractOptionToken _extractOption;
+        private ArchiveExtractor _extractor;
 
-        private bool _terminated = false;
-        private bool _bg_worker_finished = false;
+        private CancellationTokenSource _tokenSource = new();
         
 
-        public ExtractFolder(PackFolderInfo extract_folder, string extract_to_path, ExtractOptionToken extract_option)
+        public ExtractFolder(string extractPath, ExtractOptionToken extractOption, params IArchiveElement[] extractElements)
         {
             InitializeComponent();
-            _extract_folder = extract_folder;
-            _extract_option = extract_option;
-            _extract_path = extract_to_path;
+            _extractOption = extractOption;
+            _extractor = new ArchiveExtractor(extractPath, extractElements);
+            _extractor.ProgressReport += ExtractorOnProgressReport;
+            _extractor.ExtractCompleted += ExtractorOnExtractCompleted;
+            _extractor.ExtractFailured += ExtractorOnExtractFailured;
+            if(extractOption.HasFlag(ExtractOptionToken.ConvertBml))
+                _extractor.AddConverter(new BmlConverter());
+            if(extractOption.HasFlag(ExtractOptionToken.ConvertDds))
+                _extractor.AddConverter(new DdsConverter());
+            if(extractOption.HasFlag(ExtractOptionToken.ConvertTga))
+                _extractor.AddConverter(new TgaConverter());
         }
 
         private void BeginExtract()
         {
-            //relative_path means the relative path of folder.
-            Queue<(string relative_path, PackFolderInfo folder)> extend_queue = new Queue<(string relative_path, PackFolderInfo folder)>();
-            Queue<ExtractInfo> file_queue = new Queue<ExtractInfo>();
-            extend_queue.Enqueue(( "",_extract_folder));
-            ReportProgress("( Preprocessing extract files )", 0);
-            while (extend_queue.Count > 0) 
-            {
-                if (_terminated)
-                {
-                    _bg_worker_finished = true;
-                    TerminateExtract();
-                    return;
-                }
-                (string relative_path, PackFolderInfo folder) cur_proc_obj = extend_queue.Dequeue();
-                string out_path = $"{_extract_path}{cur_proc_obj.relative_path}";
-                foreach (PackFolderInfo sub_folder in cur_proc_obj.folder.GetFoldersInfo())
-                {
-                    extend_queue.Enqueue(($"{cur_proc_obj.relative_path}\\{sub_folder.FolderName}", sub_folder));
-                }
-                foreach(PackFileInfo sub_file in cur_proc_obj.folder.GetFilesInfo())
-                {
-                    ExtractInfo extractInfo = new ExtractInfo
-                    {
-                        RelativePath = cur_proc_obj.relative_path,
-                        FileInfo = sub_file
-                    };
-                    if((_extract_option & ExtractOptionToken.ConvertDDS) != ExtractOptionToken.None && sub_file.FileName.EndsWith(".dds"))
-                    {
-                        extractInfo.ConvertProcessor = ExtractConverter.DDSConverter;
-                        extractInfo.Out_filename = $"{sub_file.FileName[0..^4]}.png";
-                    }
-                    else if ((_extract_option & ExtractOptionToken.ConvertBML) != ExtractOptionToken.None && sub_file.FileName.EndsWith(".bml"))
-                    {
-                        extractInfo.ConvertProcessor = ExtractConverter.BMLConverter;
-                        extractInfo.Out_filename = $"{sub_file.FileName[0..^4]}.xml";
-                    }
-                    else if ((_extract_option & ExtractOptionToken.ConvertKSV) != ExtractOptionToken.None && sub_file.FileName.EndsWith(".ksv"))
-                    {
-                        extractInfo.ConvertProcessor = ExtractConverter.KSVConverter;
-                        extractInfo.Out_filename = $"{sub_file.FileName[0..^4]}.json";
-                    }
-                    else
-                    {
-                        extractInfo.Out_filename = $"{sub_file.FileName}";
-                    }
-                    file_queue.Enqueue(extractInfo);
-                }
-            }
-            _totalFiles = file_queue.Count;
-            if (this.InvokeRequired)
-                this.Invoke(() =>
-                {
-                    this.progress_main.MaxValue = _totalFiles;
-                });
-            while(file_queue.Count > 0)
-            {
-                if (_terminated)
-                {
-                    _bg_worker_finished = true;
-                    TerminateExtract();
-                    return;
-                }
-                ExtractInfo extract_info = file_queue.Dequeue();
-                ReportProgress(extract_info.FileInfo.FullName, _totalFiles - file_queue.Count);
-                string filePath = extract_info.FileInfo.PackFileType == PackFileType.RhoFile
-                    ? $"_rhoOut{extract_info.RelativePath}"
-                    : $"_rho5Out{extract_info.RelativePath}";
-                filePath = filePath.Replace("/", "\\");
-                string[] pathSp = filePath.Split('\\');
-                string tmpStr = "";
-                for(int i = 0; i < pathSp.Length; i++)
-                {
-                    tmpStr += pathSp[i] + "\\";
-                    if (!Directory.Exists($"{_extract_path}\\{tmpStr}"))
-                        Directory.CreateDirectory($"{_extract_path}\\{tmpStr}");
-                }
-                FileStream out_fs = new FileStream(
-                    extract_info.FileInfo.PackFileType == PackFileType.RhoFile 
-                    ? $"{_extract_path}\\_rhoOut{extract_info.RelativePath}\\{extract_info.Out_filename}"
-                    : $"{_extract_path}\\_rho5Out{extract_info.RelativePath}\\{extract_info.Out_filename}"
-                    , FileMode.Create);
-                byte[] file_data = extract_info.FileInfo.GetData();
-                try
-                {
-                    byte[] proc_file_data = extract_info.ConvertProcessor?.Invoke(file_data) ?? file_data;
-                    if (proc_file_data is null || proc_file_data.Length == 0)
-                        throw new Exception("zero!");
-
-                    out_fs.Write(proc_file_data, 0, proc_file_data.Length);
-                    out_fs.Close();
-                    file_data = null;
-                    proc_file_data = null;
-                }
-                catch (Exception ex) 
-                {
-                    Debug.Print($"Error: {ex.Message}");
-                    this._bg_worker_finished = true;
-                    TerminateExtract();
-                }
-            }
-            ReportProgress("Finished", _totalFiles);
-            _bg_worker_finished = true;
-            FinishExtract();
+            _extractor.BeginExtract(_tokenSource.Token);
         }
 
         private void FinishExtract()
@@ -231,6 +127,7 @@ namespace RhoLoader
 
         private void TerminateExtract()
         {
+            _tokenSource.Cancel();
             if (this.InvokeRequired)
             {
                 this.Invoke(TerminateExtract);
@@ -241,34 +138,47 @@ namespace RhoLoader
             }
         }
 
-        private void ReportProgress(string current_output_file, int file_no)
+        private void ReportProgress(ExtractState state, string fileName, int extractedCount, int totalCount, double progress)
         {
             if (this.InvokeRequired)
             {
-                Action<string, int> action = ReportProgress;
-                this.Invoke(action, current_output_file, file_no);
+                Action<ExtractState, string, int, int, double> action = ReportProgress;
+                this.Invoke(action, [state, fileName, extractedCount, totalCount, progress]);
             }
             else
             {
-                text_extract_file.Text = current_output_file;
-                text_progress.Text = $"{file_no}/{_totalFiles}";
-                progress_main.Value = file_no - 1;
-
+                textExtractFile.Text = fileName;
+                textProgress.Text = $"{extractedCount}/{totalCount}";
+                progressMain.Value = progress;
             }
         }
 
-        // actions
-        private void action_show(object sender, EventArgs e)
+        private void ExtractorOnProgressReport(object sender, ExtractProgressEventArgs e)
         {
-            _bg_worker = new Task(BeginExtract);
-            _bg_worker.Start();
+            ReportProgress(e.State, e.CurrentDumpFileName, e.ExtractedFilesCount, e.TotalFilesCount, e.Progress);
+        }
+        
+        private void ExtractorOnExtractCompleted()
+        {
+            FinishExtract();
         }
 
-        private void action_cancel(object sender, EventArgs e)
+        private void ExtractorOnExtractFailured(Exception obj)
+        {
+            MessageBox.Show($"Extract exception: {obj.Message}\r\nStack trace: \r\n{obj.StackTrace}");
+        }
+
+        // actions
+        private void actionShow(object sender, EventArgs e)
+        {
+            BeginExtract();
+        }
+
+        private void actionCancel(object sender, EventArgs e)
         {
             if(MessageBox.Show("msg_cancelExtract".GetStringBag(), "msg_level_question".GetStringBag(), MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                _terminated = true;
+                TerminateExtract();
             }
         }
     }

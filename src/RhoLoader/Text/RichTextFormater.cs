@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using KartLibrary.Text;
+using eP.Text;
 
 namespace RhoLoader.Text
 {

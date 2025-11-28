@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.FileType;
 
 namespace KartLibrary.File
 {
@@ -12,6 +13,7 @@ namespace KartLibrary.File
         #region Members
         private bool _disposed;
         private RhoFileHandler _fileHandler;
+        private DataSourceStreamPool _streamPool;
         #endregion
 
         #region Properties
@@ -24,6 +26,7 @@ namespace KartLibrary.File
         internal RhoDataSource(RhoFileHandler fileHandler)
         {
             _disposed = false;
+            _streamPool = new DataSourceStreamPool();
             _fileHandler = fileHandler;
         }
         #endregion
@@ -31,16 +34,14 @@ namespace KartLibrary.File
         #region Methods
         public Stream CreateStream()
         {
-            byte[] data = _fileHandler.getData();
-            return new MemoryStream(data, false);
+            return _streamPool.CreateStream(new MemoryStream(_fileHandler.getData(), false));
         }
 
         public void WriteTo(Stream stream)
         {
             if (!stream.CanWrite)
                 throw new Exception("This stream is not writeable");
-            byte[] data = _fileHandler.getData();
-            stream.Write(data, 0, data.Length);
+            stream.Write(_fileHandler.getData());
         }
 
         public async Task WriteToAsync(Stream stream, CancellationToken cancellationToken = default)
@@ -79,12 +80,12 @@ namespace KartLibrary.File
 
         public async Task<byte[]> GetBytesAsync(CancellationToken cancellationToken = default)
         {
-            byte[] data = _fileHandler.getData();
-            return data;
+            return _fileHandler.getData();
         }
 
         public void Dispose()
         {
+            _streamPool.Dispose();
             _disposed = true;
         }
         #endregion

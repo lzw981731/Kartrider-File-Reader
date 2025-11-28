@@ -1,6 +1,6 @@
 ﻿using KartLibrary.Consts;
 using KartLibrary.File;
-using KartLibrary.Tests.Command;
+using eP.Command;
 using KartLibrary.Tests.Utilities;
 using System;
 using System.Collections.Generic;
@@ -9,10 +9,12 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
+using eP.Testing;
+using KartCity.Common.FileType;
 
 namespace KartLibrary.Tests.Testing
 {
-    public abstract class TestIRhoArchiveBase<TFolder, TFile>: TestStage where TFile: IRhoFile where TFolder : IRhoFolder<TFolder, TFile>
+    public abstract class TestIRhoArchiveBase<TFolder, TFile>: TestStage where TFile: IRhoFile, new() where TFolder : IRhoFolder<TFolder, TFile>
     {
         protected abstract IRhoArchive<TFolder, TFile>? BaseArchive { get; }
 
@@ -41,7 +43,7 @@ namespace KartLibrary.Tests.Testing
             base.OnExit();
         }
 
-         [Command("ls", "List all contents of current folder or specific folder.")]
+        [Command("ls", "List all contents of current folder or specific folder.")]
         protected CommandExecuteResult commandListFolder(IConsole commandConsole, CommandArgumentQueue argumentQueue)
         {
             if (BaseArchive is null)
@@ -158,7 +160,7 @@ namespace KartLibrary.Tests.Testing
                 {
                     StartInfo = new ProcessStartInfo()
                     {
-                        FileName = "open",
+                        FileName = "xdg-open",
                         Arguments = $"\"{tmpFileName}\"",
                         RedirectStandardInput = true,
                         RedirectStandardOutput = true,
@@ -244,6 +246,60 @@ namespace KartLibrary.Tests.Testing
             }
             return suggestions.ToArray();
         }
+        
+        [Command("add", "Add specific file. Usage: add <srcFile> <fileName>")]
+        protected CommandExecuteResult commandAdd(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (BaseArchive is null)
+                return new CommandExecuteResult(ResultType.Failure, "It isn't initialized.");
+            if (CurrentFolder is null)
+                CurrentFolder = BaseArchive.RootFolder;
+            string srcFileName = argumentQueue.PopArgumentString();
+            string fileName = argumentQueue.PopArgumentString();
+            if(!System.IO.File.Exists(srcFileName))
+                return new CommandExecuteResult(ResultType.Failure, $"Source file: {srcFileName} can't be found.");
+            TFile? file = CurrentFolder.GetFile(fileName);
+            if (file is null)
+            {
+                file = new TFile();
+                if (CurrentFolder is IModifiableRhoFolder modifiableRhoFolder && file is IModifiableRhoFile _modifiableRhoFile)
+                {
+                    modifiableRhoFolder.AddFile(_modifiableRhoFile);
+                }
+                else
+                {
+                    return new CommandExecuteResult(ResultType.Failure, "This Rho archive can't be modified");    
+                }
+            }
 
+            if (file is IModifiableRhoFile modifiableRhoFile)
+            {
+                modifiableRhoFile.Name = fileName;
+                modifiableRhoFile.DataSource = new FileDataSource(srcFileName);
+            }
+            else
+            {
+                return new CommandExecuteResult(ResultType.Failure, "This Rho archive can't be modified");    
+            }
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+        
+        [Command("save", "Save this rho archive.")]
+        protected CommandExecuteResult commandSave(IConsole commandConsole, CommandArgumentQueue argumentQueue)
+        {
+            if (BaseArchive is null)
+                return new CommandExecuteResult(ResultType.Failure, "It isn't initialized.");
+            string newFileName = argumentQueue.PopArgumentString();
+            if (BaseArchive is RhoArchive rhoArchive)
+            {
+                rhoArchive.SaveTo(newFileName);
+            }
+            else
+            {
+                return new CommandExecuteResult(ResultType.Failure, "This command is only support Rho Archive currently.");    
+            }
+            return new CommandExecuteResult(ResultType.Success, "");
+        }
+        
     }
 }

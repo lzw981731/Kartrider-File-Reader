@@ -7,6 +7,8 @@ using KartLibrary.IO;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Collections.ObjectModel;
+using KartCity.Common.FileType;
+using KartCity.Common.IO;
 
 namespace KartLibrary.File
 {
@@ -28,6 +30,7 @@ namespace KartLibrary.File
 
         private string _originalName;
         private HashSet<RhoFile> _addedFiles;
+        private HashSet<RhoFile> _modifiedFiles;
         private HashSet<RhoFile> _removedFiles;
         private HashSet<RhoFolder> _addedFolders;
         private HashSet<RhoFolder> _removedFolders;
@@ -100,6 +103,7 @@ namespace KartLibrary.File
             _addedFolders.Count > 0 ||
             _removedFiles.Count > 0 ||
             _removedFolders.Count > 0 ||
+            _modifiedFiles.Count > 0 ||
             _originalName != _name ||
             checkIfFilesModified();
         #endregion
@@ -115,6 +119,7 @@ namespace KartLibrary.File
             _addedFolders = new HashSet<RhoFolder>();
             _removedFiles = new HashSet<RhoFile>();
             _removedFolders = new HashSet<RhoFolder>();
+            _modifiedFiles = new HashSet<RhoFile>();
             _parent = null;
             _disposed = false;
             _isRootFolder = false;
@@ -199,6 +204,9 @@ namespace KartLibrary.File
                         _addedFiles.Add(file);
                     _files.Add(file.Name, file);
                     file._parentFolder = this;
+
+                    if (file.IsModified)
+                        _modifiedFiles.Add(file);
                 }
             }
         }
@@ -519,6 +527,14 @@ namespace KartLibrary.File
             return _folderDataIndex.Value;
         }
 
+        internal void NotifyFileModified(RhoFile modifiedFile)
+        {
+            if (modifiedFile.IsModified)
+                _modifiedFiles.Add(modifiedFile);
+            else
+                _modifiedFiles.Remove(modifiedFile);
+        }
+
         internal void appliedChanges()
         {
             _originalName = _name;
@@ -526,6 +542,7 @@ namespace KartLibrary.File
             _addedFolders.Clear();
             _removedFiles.Clear();
             _removedFolders.Clear();
+            _modifiedFiles.Clear();
         }
 
         private bool checkIfFilesModified()

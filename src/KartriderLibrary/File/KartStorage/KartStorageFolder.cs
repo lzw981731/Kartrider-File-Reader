@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.FileType;
 
 namespace KartLibrary.File
 {
@@ -32,8 +33,9 @@ namespace KartLibrary.File
 
         internal RhoFolder? _sourceRhoFolder;
         internal Rho5Folder? _sourceRho5Folder;
+        internal IRhoFolder? _sourceFolder;
 
-        private RhoFolderStoreMode _rhoStoreMode;
+        private RhoFolderStoreMode _storeMode;
         #endregion
 
         #region Properties
@@ -84,11 +86,20 @@ namespace KartLibrary.File
 
         public bool IsRootFolder => _isRootFolder;
 
-        public RhoFolderStoreMode RhoFolderStoreMode
+        public RhoFolderStoreMode FolderStoreMode
         {
-            get => _rhoStoreMode;
-            set => _rhoStoreMode = value;
+            get => _storeMode;
+            set => _storeMode = value;
         }
+
+        internal bool IsRhoFolder => _sourceRhoFolder is not null;
+        
+        internal bool IsRho5Folder => _sourceRho5Folder is not null;
+        
+        internal ICollection<KartStorageFolder> AddedFolders => _addedFolders;
+        internal ICollection<KartStorageFolder> RemovedFolders => _removedFolders;
+        internal ICollection<KartStorageFile> AddedFiles => _addedFiles;
+        internal ICollection<KartStorageFile> RemovedFiles => _removedFiles;
 
         IRhoFolder? IRhoFolder.Parent => Parent;
 
@@ -123,7 +134,7 @@ namespace KartLibrary.File
             _addedFolders = new HashSet<KartStorageFolder>();
             _removedFiles = new HashSet<KartStorageFile>();
             _removedFolders = new HashSet<KartStorageFolder>();
-            _rhoStoreMode = RhoFolderStoreMode.RhoFolder;
+            _storeMode = RhoFolderStoreMode.RhoRoot;
             _parent = null;
             _disposed = false;
             _isRootFolder = false;
@@ -206,27 +217,29 @@ namespace KartLibrary.File
             {
                 if (file._parentFolder is not null)
                     throw new Exception("The parent of a file you want to add is not null.");
+                
+                if (_removedFiles.Contains(file))
+                {
+                    if(file._sourceFile is RhoFile rhoFile && _sourceRhoFolder is not null)
+                    {
+                        _sourceRhoFolder.AddFile(rhoFile);
+                    }
+                    else if (file._sourceFile is Rho5File rho5File && _sourceRho5Folder is not null)
+                    {
+                        _sourceRho5Folder.AddFile(rho5File);
+                    }
+                    _removedFiles.Remove(file);
+                }
                 else
                 {
-                    if (_removedFiles.Contains(file))
-                    {
-                        if(file._sourceFile is RhoFile rhoFile && _sourceRhoFolder is not null)
-                        {
-                            _sourceRhoFolder.AddFile(rhoFile);
-                        }
-                        else if (file._sourceFile is Rho5File rho5File && _sourceRho5Folder is not null)
-                        {
-                            _sourceRho5Folder.AddFile(rho5File);
-                        }
-                        _removedFiles.Remove(file);
-                    }
-                    else
-                    {
-                        _addedFiles.Add(file);
-                    }
-                    _files.Add(file.Name, file);
-                    file._parentFolder = this;
+                    // if (file._sourceFile is not null)
+                    //     throw new Exception("Add the file which is linked to RhoFile or Rho5File is not allowed.");
+                    
+                    _addedFiles.Add(file);
                 }
+                
+                _files.Add(file.Name, file);
+                file._parentFolder = this;
             }
         }
 
@@ -283,12 +296,17 @@ namespace KartLibrary.File
                     {
                         if (folder._sourceRhoFolder is not null && _sourceRhoFolder is not null)
                             _sourceRhoFolder.AddFolder(folder._sourceRhoFolder);
-                        if (folder._sourceRho5Folder is not null && _sourceRho5Folder is not null)
+                        else if (folder._sourceRho5Folder is not null && _sourceRho5Folder is not null)
                             _sourceRho5Folder.AddFolder(folder._sourceRho5Folder);
                         _removedFolders.Remove(folder);
                     }
                     else
+                    {
+                        // if (folder._sourceRho5Folder is not null || folder._sourceRhoFolder is not null)
+                        //     throw new Exception("Add the folder which mounted RhoFolder or Rho5Folder is not allowed.");
+                        //
                         _addedFolders.Add(folder);
+                    }
                     _folders.Add(folder.Name, folder);
                     folder._parent = this;
                     folder._prevCounterInitialized = false;

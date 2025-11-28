@@ -34,7 +34,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         private KCSSubMenuItemTextContainer text;
         #endregion
         #region Properies
-        
+
         #endregion
         #region Constructors
         public KCSSubMenuItem(MenuItem item): base(item)
@@ -90,7 +90,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                     menuItemText = new SpriteText()
                     {
                         AlwaysPresent = true,
-                        Font = KCSFont.Default.With(size : 17f),
+                        Font = KCSFont.Default,
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
                         Shadow = true,

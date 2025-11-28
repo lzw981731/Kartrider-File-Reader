@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using KartLibrary.Game.Record;
 
 namespace KartLibrary.Record
 {
@@ -12,7 +15,7 @@ namespace KartLibrary.Record
 
         public int RecordHeaderVersion { get; set; }
         public string RecordTitle { get; set; } = "";
-        public CountryCode RegionCode { get; set; }
+        public CountryCode CountryCode { get; set; }
         public byte Unknown1_1 { get; set; }
         public ContestType ContestType { get; set; } //byte
         public uint PlayerNameHash { get; set; }
@@ -27,8 +30,8 @@ namespace KartLibrary.Record
         public int Unknown3 { get; set; }
         public TimeSpan BestTime { get; set; }
         public string ContestImg { get; set; } = "";//Old Property
-        public int Unknown4 { get; set; }
-        public int Unknown5 { get; set; }
+        public byte[] Unknown4 { get; set; } = [];
+        public byte Unknown5 { get; set; }
         public byte Unknown6 { get; set; }
         public SpeedType Speed { get; set; } = SpeedType.SuperSpeed; //byte
         public PlayerInfo[] Players { get; set; } = new PlayerInfo[0];

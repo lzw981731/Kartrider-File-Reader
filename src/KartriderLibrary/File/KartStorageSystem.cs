@@ -1,13 +1,17 @@
 ﻿using KartLibrary.Consts;
-using KartLibrary.Data;
 using KartLibrary.Xml;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using KartCity.Common.Client;
+using KartCity.Common.Consts;
+using KartCity.Common.IO.SmartStream;
+using KartCity.Common.Xml;
 
 namespace KartLibrary.File
 {
@@ -41,6 +45,9 @@ namespace KartLibrary.File
         private HashSet<RhoArchive> _rhoArchives;
         private HashSet<Rho5Archive> _rho5Archives;
 
+        private Dictionary<KartStorageFolder, RhoArchive> _rhoMapping = [];
+        private Dictionary<KartStorageFolder, Rho5Archive> _rho5Mapping = [];
+
         private bool _initialized;
         private bool _disposed;
 
@@ -48,6 +55,10 @@ namespace KartLibrary.File
 
         #endregion
 
+        #region Events
+        public event ProgressChangedEventHandler InitializingProgressChanged;
+        #endregion
+        
         #region Properties
         public KartStorageFolder RootFolder => _rootFolder;
 
@@ -118,6 +129,34 @@ namespace KartLibrary.File
             return _rootFolder.GetFile(filePath);
         }
 
+        public void SaveAs(string path)
+        {
+            ApplyRootFolderChanges();
+
+            lock (_rhoMapping)
+            {
+                foreach (var rhoArchive in _rhoMapping.Values)
+                {
+                    if (rhoArchive.FileHasModified())
+                    {
+                        rhoArchive.SaveTo(Path.Join(path, rhoArchive.FileName));
+                    }
+                }
+            }
+
+            lock (_rho5Mapping)
+            {
+                foreach (var rho5Archive in _rho5Mapping.Values)
+                {
+                    if (rho5Archive.FileHasModified())
+                    {
+                        rho5Archive.Save(path, SavePattern.AlwaysRegeneration);
+                    }
+                }
+            }
+        }
+        
+
         public void Close()
         {
             if (!_initialized)
@@ -155,7 +194,11 @@ namespace KartLibrary.File
                 {
                     throw new Exception("You must give Dat folder path or Kartrider client path in constructor or builder.");
                 }
-                string folderListFilePath = $"{dataFolder}\\aaa.pk";
+                string folderListFilePath = Path.Combine($"{dataFolder}", "aaa.pk") ;
+                if (!System.IO.File.Exists(folderListFilePath))
+                {
+                    folderListFilePath = Path.Combine($"{dataFolder}", "beni.pg") ;
+                }
                 if (!System.IO.File.Exists(folderListFilePath))
                 {
                     throw new Exception($"{folderListFilePath} does not exist");
@@ -164,7 +207,7 @@ namespace KartLibrary.File
                 {
                     BinaryReader listFileRawReader = new BinaryReader(listFileStream);
                     int krDataLen = listFileRawReader.ReadInt32();
-                    byte[] listFileData = listFileRawReader.ReadKRData(krDataLen);
+                    byte[] listFileData = listFileRawReader.ReadSmartStreamToBytes(krDataLen);
                     BinaryXmlDocument bmlDoc = new BinaryXmlDocument();
                     bmlDoc.Read(Encoding.Unicode, listFileData);
 
@@ -186,8 +229,8 @@ namespace KartLibrary.File
                                 if (childFolderName is null)
                                     throw new Exception();
                                 KartStorageFolder newFolder = new KartStorageFolder();
-                                newFolder.Name = curObj.parentFolder.IsRootFolder ? $"{childFolderName}_" : childFolderName;
-                                newFolder.RhoFolderStoreMode = RhoFolderStoreMode.PackFolder;
+                                newFolder.Name = childFolderName;
+                                newFolder.FolderStoreMode = RhoFolderStoreMode.PackFolder;
                                 curObj.parentFolder.AddFolder(newFolder);
                                 packFolderQueue.Enqueue((newFolder, child));
                             }
@@ -207,7 +250,7 @@ namespace KartLibrary.File
                                 {
                                     KartStorageFolder newFolder = new KartStorageFolder();
                                     newFolder.Name = childFolderName;
-                                    newFolder.RhoFolderStoreMode = RhoFolderStoreMode.RhoFolder;
+                                    newFolder.FolderStoreMode = RhoFolderStoreMode.RhoRoot;
                                     curObj.parentFolder.AddFolder(newFolder);
                                     rhoFilesInfoQueue.Enqueue((newFolder, rhoFileInfo));
                                 }
@@ -221,7 +264,7 @@ namespace KartLibrary.File
                 DirectoryInfo dataFolderInfo = new DirectoryInfo(dataFolder);
                 foreach(FileInfo fileInfo in dataFolderInfo.GetFiles())
                 {
-                    Regex fileNamePattern = new Regex(@"^(\S+?_)(?:(\S+?)_)*(\S+?){0,1}\.rho$");
+                    Regex fileNamePattern = new Regex(@"^(\S+?_){0,1}(?:(\S+?)_){0,1}(\S+?){0,1}\.rho$");
                     Match match = fileNamePattern.Match(fileInfo.Name);
                     if (match.Success && match.Groups.Count >= 1)
                     {
@@ -264,6 +307,17 @@ namespace KartLibrary.File
                 }
             });
 
+            if (_regionCode is null)
+            {
+                string regionFolderName = _rootFolder.GetFolder("zeta")?.Folders.FirstOrDefault()?.Name ?? "";
+                _regionCode = regionFolderName.ToLower() switch
+                {
+                    "kr" => CountryCode.KR,
+                    "cn" => CountryCode.CN,
+                    "tw" => CountryCode.TW,
+                    _ => CountryCode.None,
+                };
+            }
             rhoFilesInfoQueue.Clear();
         }
 
@@ -278,6 +332,10 @@ namespace KartLibrary.File
                 lock (curObj.mountFolder)
                 {
                     curObj.mountFolder._sourceRhoFolder = curObj.Item2;
+                    
+                    lock(_rhoMapping)
+                        _rhoMapping.Add(curObj.mountFolder, rhoArchive);
+                    
                     foreach (RhoFolder subFolder in curObj.Item2.Folders)
                     {
                         KartStorageFolder newFolder = new KartStorageFolder();
@@ -361,7 +419,175 @@ namespace KartLibrary.File
                 }
             }
         }
+        
+        private void ApplyRootFolderChanges()
+        {
+            foreach (var folder in _rootFolder.Folders)
+            {
+                if (folder.FolderStoreMode is RhoFolderStoreMode.None)
+                    throw new Exception("Adding folder in RootFolder is not support.");
 
+                if (folder.FolderStoreMode is RhoFolderStoreMode.RhoRoot)
+                {
+                    ApplyRhoFolderChanges(folder);
+                }
+                else if (folder.FolderStoreMode is RhoFolderStoreMode.PackFolder)
+                {
+                    ApplyPackFolderChanges(folder);
+                }
+                else if (folder.FolderStoreMode is RhoFolderStoreMode.Rho5Root)
+                {
+                    ApplyRho5FolderChanges(folder);
+                }
+            }
+            
+            _rootFolder.appliedChanges();
+        }
+        
+        private void ApplyPackFolderChanges(KartStorageFolder packFolder)
+        {
+            if (packFolder.FolderStoreMode is not RhoFolderStoreMode.PackFolder)
+                throw new ArgumentException($"The store mode of {nameof(packFolder)} is not PackFolder.");
+            
+            if (packFolder.Files.Count > 0)
+            {
+                bool isModified = packFolder._sourceRhoFolder is null || packFolder.Files.Any(x => x.IsModified);
+
+                if (packFolder._sourceRhoFolder is null)
+                {
+                    string archiveName = GetNewRhoName(packFolder) + "_";
+                    
+                    RhoArchive newArchive = new RhoArchive()
+                    {
+                        FileName = archiveName
+                    };
+                    
+                    lock(_rhoMapping)
+                        _rhoMapping[packFolder] = newArchive;
+                    
+                    packFolder._sourceRhoFolder = newArchive.RootFolder;
+                }
+
+                
+                if (isModified)
+                {
+                    foreach (var childFile in packFolder.Files)
+                    {
+                        if (childFile._sourceFile is null)
+                            childFile.ConvertToRhoFile();
+                    }
+                }
+            }
+
+            foreach (var folder in packFolder.Folders)
+            {
+                if (folder.FolderStoreMode is RhoFolderStoreMode.Rho5Root)
+                    throw new Exception($"PackFolder shouldn't contain the folder with store mode being Rho5Root.");
+
+                if (folder.FolderStoreMode is RhoFolderStoreMode.None)
+                {
+                    folder.FolderStoreMode = RhoFolderStoreMode.RhoRoot;
+                }
+
+                if (folder.FolderStoreMode is RhoFolderStoreMode.RhoRoot)
+                {
+                    if (folder._sourceRhoFolder is null)
+                    {
+                        string rhoName = GetNewRhoName(folder);
+                        RhoArchive newRhoArchive = new RhoArchive()
+                        {
+                            FileName = rhoName
+                        };
+
+                        folder._sourceRhoFolder = newRhoArchive.RootFolder;
+                    
+                        lock (_rhoMapping)
+                            _rhoMapping[folder] = newRhoArchive;
+                    }
+                    
+                    ApplyRhoFolderChanges(folder);
+                }
+                else if (folder.FolderStoreMode is RhoFolderStoreMode.PackFolder)
+                {
+                    ApplyPackFolderChanges(folder);
+                }
+            }
+            
+            packFolder.appliedChanges();
+        }
+
+        private void ApplyRhoFolderChanges(KartStorageFolder rhoFolder)
+        {
+            if (rhoFolder._sourceRhoFolder is null)
+                throw new Exception("Source rho folder is null.");
+            
+            foreach (var file in rhoFolder.Files)
+            {
+                if (file._sourceFile is null)
+                    file.ConvertToRhoFile();
+            }
+
+            foreach (var folder in rhoFolder.Folders)
+            {
+                if (folder._sourceRhoFolder is null)
+                {
+                    RhoFolder newRhoFolder = new RhoFolder()
+                    {
+                        Name = folder.Name 
+                    };
+
+                    folder._sourceRhoFolder = newRhoFolder;
+                    rhoFolder._sourceRhoFolder?.AddFolder(newRhoFolder);
+                }
+                
+                ApplyRhoFolderChanges(folder);
+            }
+        }
+
+        private void ApplyRho5FolderChanges(KartStorageFolder rho5Folder)
+        {
+            if (rho5Folder._sourceRho5Folder is null)
+                throw new Exception("Source rho5 folder is null.");
+            
+            foreach (var file in rho5Folder.Files)
+            {
+                if (file._sourceFile is null)
+                    file.ConvertToRho5File();
+            }
+
+            foreach (var folder in rho5Folder.Folders)
+            {
+                if (folder._sourceRho5Folder is null)
+                {
+                    Rho5Folder newRho5Folder = new Rho5Folder()
+                    {
+                        Name = folder.Name 
+                    };
+
+                    folder._sourceRho5Folder = newRho5Folder;
+                    rho5Folder._sourceRho5Folder?.AddFolder(newRho5Folder);
+                }
+                
+                ApplyRho5FolderChanges(folder);
+            }
+        }
+
+        private string GetNewRhoName(KartStorageFolder folder)
+        {
+            List<string> paths = [folder.Name];
+            var curFolder = folder.Parent;
+
+            while (curFolder is not null && curFolder != _rootFolder)
+            {
+                paths.Add(curFolder.Name);
+                curFolder = curFolder.Parent;
+            }
+
+            paths.Reverse();
+
+            return string.Join("_", paths);
+        }
+        
         protected virtual void dispose(bool disposing)
         {
             if (_disposed)
@@ -373,6 +599,38 @@ namespace KartLibrary.File
                 Close();
             }
             _disposed = true;
+        }
+
+        internal void TestAllRho5()
+        {
+            Rho5Archive rho5Archive = new Rho5Archive();
+            Queue<(Rho5Folder, KartStorageFolder)> queue = new Queue<(Rho5Folder, KartStorageFolder)>();
+            foreach(var folder in RootFolder.Folders)
+                queue.Enqueue((rho5Archive.RootFolder, folder));
+            while (queue.Count > 0)
+            {
+                var obj = queue.Dequeue();
+                foreach (var folder in obj.Item2.Folders)
+                {
+                    Rho5Folder newFolder = new Rho5Folder();
+                    newFolder.Name = folder.Name;
+                    obj.Item1.AddFolder(newFolder);
+                    queue.Enqueue((newFolder, folder));
+                }
+
+                foreach (var file in obj.Item2.Files)
+                {
+                    Rho5File rho5File = new Rho5File();
+                    rho5File.Name = file.Name;
+                    rho5File.DataSource = file.DataSource;
+                    obj.Item1.AddFile(rho5File);
+                }
+            }
+
+            string outPath = Path.Combine(Environment.CurrentDirectory, "experiment");
+            if(!Directory.Exists(outPath))
+                Directory.CreateDirectory(outPath);
+            rho5Archive.Save(outPath, "DataPack1", _regionCode ?? CountryCode.None, SavePattern.AlwaysRegeneration);
         }
         #endregion
     }
@@ -412,9 +670,9 @@ namespace KartLibrary.File
             return this;
         }
 
-        public KartStorageSystemBuilder SetClientRegion(CountryCode regionCode)
+        public KartStorageSystemBuilder SetClientRegion(CountryCode countryCode)
         {
-            _regionCode = regionCode;
+            _regionCode = countryCode;
             return this;
         }
 

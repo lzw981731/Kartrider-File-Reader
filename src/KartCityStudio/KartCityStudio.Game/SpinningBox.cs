@@ -1,3 +1,4 @@
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -20,7 +21,7 @@ namespace KartCityStudio.Game
         [BackgroundDependencyLoader]
         private void load(TextureStore textures)
         {
-            
+            Lazy<int> aint = new Lazy<int>();
             InternalChild = box = new Container
             {
                 AutoSizeAxes = Axes.Both,

@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseOutputPath>..\..\out_pool\RaycityLibrary</BaseOutputPath>
+    <AssemblyVersion>24.2.31.1</AssemblyVersion>
+    <FileVersion>24.2.31.1</FileVersion>
+    <SignAssembly>False</SignAssembly>
+    <Version>25.3.31</Version>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Release\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetZip" Version="1.16.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\eP Library\eP Library.csproj" />
+    <ProjectReference Include="..\KartCity.Common\KartCity.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Game\Skil\" />
+  </ItemGroup>
+
+</Project>

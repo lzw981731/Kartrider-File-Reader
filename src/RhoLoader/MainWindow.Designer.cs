@@ -1,4 +1,6 @@
-﻿using RhoLoader.Controls;
+﻿using RhoLoader;
+using RhoLoader.Controls;
+using RhoLoader.Controls.PreviewPanel;
 
 namespace RhoLoader
 {
@@ -27,352 +29,410 @@ namespace RhoLoader
         /// <summary>
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
-        /// Because Designer have some bugs which cause the custom controls will be disappeared, 
-        /// it is recommend to disable ".NET Core Win Forms Designer".
         /// </summary>
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            menu = new MenuStrip();
-            menu_file = new ToolStripMenuItem();
-            menu_file_open = new ToolStripMenuItem();
-            menu_file_openFiles = new ToolStripMenuItem();
-            menu_file_openFolder = new ToolStripMenuItem();
-            menuToolStripMenuItem = new ToolStripMenuItem();
-            toolStripSeparator1 = new ToolStripSeparator();
-            menu_file_exit = new ToolStripMenuItem();
-            menu_extract = new ToolStripMenuItem();
-            menu_extract_all = new ToolStripMenuItem();
-            menu_extract_current = new ToolStripMenuItem();
-            menu_about = new ToolStripMenuItem();
-            menu_lang = new ToolStripMenuItem();
-            menumodeToolStripMenuItem = new ToolStripMenuItem();
-            listview_main = new ListView();
-            columnHeader1 = new ColumnHeader();
-            columnHeader3 = new ColumnHeader();
-            columnHeader2 = new ColumnHeader();
-            dialog_singleFile = new OpenFileDialog();
-            dialog_multiFile = new OpenFileDialog();
-            imageList_listview = new ImageList(components);
-            contextMenu_list = new ContextMenuStrip(components);
-            filemenu_extractfile = new ToolStripMenuItem();
-            filemenu_extract_selected = new ToolStripMenuItem();
-            filemenu_convertPNG = new ToolStripMenuItem();
-            filemenu_convertXML = new ToolStripMenuItem();
-            treeview_explorer = new Controls.DarkTreeView();
-            split_main = new SplitContainer();
-            panel_topbar = new Panel();
-            textbox_path = new TextBox();
-            icon_back = new PictureBox();
+            menu = new System.Windows.Forms.MenuStrip();
+            menu_file = new System.Windows.Forms.ToolStripMenuItem();
+            menu_file_open = new System.Windows.Forms.ToolStripMenuItem();
+            menu_file_openFolderKr = new System.Windows.Forms.ToolStripMenuItem();
+            menu_file_openFolderRc = new System.Windows.Forms.ToolStripMenuItem();
+            menuToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            menu_file_exit = new System.Windows.Forms.ToolStripMenuItem();
+            menu_extract = new System.Windows.Forms.ToolStripMenuItem();
+            menu_extract_all = new System.Windows.Forms.ToolStripMenuItem();
+            menu_extract_current = new System.Windows.Forms.ToolStripMenuItem();
+            menu_about = new System.Windows.Forms.ToolStripMenuItem();
+            menu_lang = new System.Windows.Forms.ToolStripMenuItem();
+            menu_debug = new System.Windows.Forms.ToolStripMenuItem();
+            _listviewMain = new System.Windows.Forms.ListView();
+            columnHeader1 = new System.Windows.Forms.ColumnHeader();
+            columnHeader3 = new System.Windows.Forms.ColumnHeader();
+            columnHeader2 = new System.Windows.Forms.ColumnHeader();
+            _dialogSingleFile = new System.Windows.Forms.OpenFileDialog();
+            _dialogMultiFile = new System.Windows.Forms.OpenFileDialog();
+            imageList_listview = new System.Windows.Forms.ImageList(components);
+            contextMenu_list = new System.Windows.Forms.ContextMenuStrip(components);
+            fileMenuExtractfile = new System.Windows.Forms.ToolStripMenuItem();
+            fileMenuExtractSelected = new System.Windows.Forms.ToolStripMenuItem();
+            fileMenuConvertPNG = new System.Windows.Forms.ToolStripMenuItem();
+            fileMenuConvertXML = new System.Windows.Forms.ToolStripMenuItem();
+            _treeViewExplorer = new RhoLoader.Controls.DarkTreeView();
+            split_main = new System.Windows.Forms.SplitContainer();
+            splitContainer1 = new System.Windows.Forms.SplitContainer();
+            _previewPanel = new RhoLoader.Controls.PreviewPanel.PreviewPanel();
+            panel_topbar = new System.Windows.Forms.Panel();
+            textbox_path = new System.Windows.Forms.TextBox();
+            _iconBack = new System.Windows.Forms.PictureBox();
+            _dialogKartData = new System.Windows.Forms.FolderBrowserDialog();
+            _dialogExtractSelector = new System.Windows.Forms.FolderBrowserDialog();
+            toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
             menu.SuspendLayout();
             contextMenu_list.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)split_main).BeginInit();
             split_main.Panel1.SuspendLayout();
             split_main.Panel2.SuspendLayout();
             split_main.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
             panel_topbar.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)icon_back).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)_iconBack).BeginInit();
             SuspendLayout();
             // 
             // menu
             // 
-            menu.BackColor = Color.White;
-            menu.Font = new Font("Segoe UI", 9F);
-            menu.Items.AddRange(new ToolStripItem[] { menu_file, menu_extract, menu_about, menu_lang, menumodeToolStripMenuItem });
-            menu.Location = new Point(0, 0);
+            menu.BackColor = System.Drawing.Color.White;
+            menu.Font = new System.Drawing.Font("Segoe UI", 9F);
+            menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { menu_file, menu_extract, menu_about, menu_lang, menu_debug });
+            menu.Location = new System.Drawing.Point(0, 0);
             menu.Name = "menu";
-            menu.Padding = new Padding(7, 2, 0, 2);
-            menu.RenderMode = ToolStripRenderMode.Professional;
-            menu.Size = new Size(967, 24);
+            menu.Padding = new System.Windows.Forms.Padding(7, 2, 0, 2);
+            menu.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
+            menu.Size = new System.Drawing.Size(967, 24);
             menu.TabIndex = 2;
             menu.Tag = "menu";
             menu.Text = "menu";
             // 
             // menu_file
             // 
-            menu_file.BackColor = Color.White;
-            menu_file.DropDownItems.AddRange(new ToolStripItem[] { menu_file_open, menu_file_openFiles, menu_file_openFolder, menuToolStripMenuItem, toolStripSeparator1, menu_file_exit });
-            menu_file.ForeColor = Color.Black;
+            menu_file.BackColor = System.Drawing.Color.White;
+            menu_file.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { menu_file_open, menu_file_openFolderKr, menu_file_openFolderRc, menuToolStripMenuItem, toolStripSeparator1, menu_file_exit });
+            menu_file.ForeColor = System.Drawing.Color.Black;
             menu_file.Name = "menu_file";
-            menu_file.Size = new Size(71, 20);
+            menu_file.Size = new System.Drawing.Size(71, 20);
             menu_file.Tag = "menu_file";
             menu_file.Text = "menu_file";
             // 
             // menu_file_open
             // 
-            menu_file_open.ForeColor = Color.Black;
+            menu_file_open.ForeColor = System.Drawing.Color.Black;
             menu_file_open.Name = "menu_file_open";
-            menu_file_open.Size = new Size(170, 22);
+            menu_file_open.Size = new System.Drawing.Size(183, 22);
             menu_file_open.Tag = "menu_open";
             menu_file_open.Text = "menu_open";
-            menu_file_open.Click += action_open;
+            menu_file_open.Click += ActionOpen;
             // 
-            // menu_file_openFiles
+            // menu_file_openFolderKr
             // 
-            menu_file_openFiles.ForeColor = Color.Black;
-            menu_file_openFiles.Name = "menu_file_openFiles";
-            menu_file_openFiles.Size = new Size(170, 22);
-            menu_file_openFiles.Tag = "menu_openFiles";
-            menu_file_openFiles.Text = "menu_openFiles";
-            menu_file_openFiles.Click += action_open_files;
+            menu_file_openFolderKr.ForeColor = System.Drawing.Color.Black;
+            menu_file_openFolderKr.Name = "menu_file_openFolderKr";
+            menu_file_openFolderKr.Size = new System.Drawing.Size(183, 22);
+            menu_file_openFolderKr.Tag = "menu_openFolderKr";
+            menu_file_openFolderKr.Text = "menu_openFolderKr";
+            menu_file_openFolderKr.Click += ActionOpenFolderKr;
             // 
-            // menu_file_openFolder
+            // menu_file_openFolderRc
             // 
-            menu_file_openFolder.ForeColor = Color.Black;
-            menu_file_openFolder.Name = "menu_file_openFolder";
-            menu_file_openFolder.Size = new Size(170, 22);
-            menu_file_openFolder.Tag = "menu_openFolder";
-            menu_file_openFolder.Text = "menu_openFolder";
-            menu_file_openFolder.Click += action_openFolder;
+            menu_file_openFolderRc.ForeColor = System.Drawing.Color.Black;
+            menu_file_openFolderRc.Name = "menu_file_openFolderRc";
+            menu_file_openFolderRc.Size = new System.Drawing.Size(183, 22);
+            menu_file_openFolderRc.Tag = "menu_openFolderRc";
+            menu_file_openFolderRc.Text = "menu_openFolderRc";
+            menu_file_openFolderRc.Click += ActionOpenFolderRc;
             // 
             // menuToolStripMenuItem
             // 
             menuToolStripMenuItem.Name = "menuToolStripMenuItem";
-            menuToolStripMenuItem.Size = new Size(170, 22);
+            menuToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
             menuToolStripMenuItem.Text = "menu_save";
             // 
             // toolStripSeparator1
             // 
-            toolStripSeparator1.ForeColor = Color.Black;
+            toolStripSeparator1.ForeColor = System.Drawing.Color.Black;
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(167, 6);
+            toolStripSeparator1.Size = new System.Drawing.Size(180, 6);
             // 
             // menu_file_exit
             // 
-            menu_file_exit.ForeColor = Color.Black;
+            menu_file_exit.ForeColor = System.Drawing.Color.Black;
             menu_file_exit.Name = "menu_file_exit";
-            menu_file_exit.Size = new Size(170, 22);
+            menu_file_exit.Size = new System.Drawing.Size(183, 22);
             menu_file_exit.Tag = "menu_exit";
             menu_file_exit.Text = "menu_exit";
-            menu_file_exit.Click += action_exit;
+            menu_file_exit.Click += ActionExit;
             // 
             // menu_extract
             // 
-            menu_extract.BackColor = Color.White;
-            menu_extract.DropDownItems.AddRange(new ToolStripItem[] { menu_extract_all, menu_extract_current });
-            menu_extract.ForeColor = Color.Black;
+            menu_extract.BackColor = System.Drawing.Color.White;
+            menu_extract.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { menu_extract_all, menu_extract_current });
+            menu_extract.ForeColor = System.Drawing.Color.Black;
             menu_extract.Name = "menu_extract";
-            menu_extract.Size = new Size(91, 20);
+            menu_extract.Size = new System.Drawing.Size(90, 20);
             menu_extract.Tag = "menu_extract";
             menu_extract.Text = "menu_extract";
             // 
             // menu_extract_all
             // 
-            menu_extract_all.ForeColor = Color.Black;
+            menu_extract_all.ForeColor = System.Drawing.Color.Black;
             menu_extract_all.Name = "menu_extract_all";
-            menu_extract_all.Size = new Size(189, 22);
+            menu_extract_all.Size = new System.Drawing.Size(188, 22);
             menu_extract_all.Tag = "menu_extract_all";
             menu_extract_all.Text = "menu_extract_all";
-            menu_extract_all.Click += action_extract_all;
+            menu_extract_all.Click += ActionExtractAll;
             // 
             // menu_extract_current
             // 
-            menu_extract_current.ForeColor = Color.Black;
+            menu_extract_current.ForeColor = System.Drawing.Color.Black;
             menu_extract_current.Name = "menu_extract_current";
-            menu_extract_current.Size = new Size(189, 22);
+            menu_extract_current.Size = new System.Drawing.Size(188, 22);
             menu_extract_current.Tag = "menu_extract_current";
             menu_extract_current.Text = "menu_extract_current";
-            menu_extract_current.Click += action_extract_current;
+            menu_extract_current.Click += ActionExtractCurrent;
             // 
             // menu_about
             // 
-            menu_about.BackColor = Color.White;
-            menu_about.ForeColor = Color.Black;
+            menu_about.BackColor = System.Drawing.Color.White;
+            menu_about.ForeColor = System.Drawing.Color.Black;
             menu_about.Name = "menu_about";
-            menu_about.Size = new Size(86, 20);
+            menu_about.Size = new System.Drawing.Size(86, 20);
             menu_about.Tag = "menu_about";
             menu_about.Text = "menu_about";
-            menu_about.Click += action_aboutWindow;
+            menu_about.Click += ActionAboutWindow;
             // 
             // menu_lang
             // 
-            menu_lang.BackColor = Color.White;
-            menu_lang.ForeColor = Color.Black;
+            menu_lang.BackColor = System.Drawing.Color.White;
+            menu_lang.ForeColor = System.Drawing.Color.Black;
             menu_lang.Name = "menu_lang";
-            menu_lang.Size = new Size(112, 20);
+            menu_lang.Size = new System.Drawing.Size(112, 20);
             menu_lang.Tag = "menu_Languages";
             menu_lang.Text = "menu_Languages";
             // 
-            // menumodeToolStripMenuItem
+            // menu_debug
             // 
-            menumodeToolStripMenuItem.BackColor = Color.DarkGray;
-            menumodeToolStripMenuItem.Name = "menumodeToolStripMenuItem";
-            menumodeToolStripMenuItem.Size = new Size(86, 20);
-            menumodeToolStripMenuItem.Text = "menu_mode";
+            menu_debug.BackColor = System.Drawing.Color.White;
+            menu_debug.ForeColor = System.Drawing.Color.Black;
+            menu_debug.Name = "menu_debug";
+            menu_debug.Size = new System.Drawing.Size(54, 20);
+            menu_debug.Tag = "menu_debug";
+            menu_debug.Text = "Debug";
+            menu_debug.Click += ActionDebug;
             // 
-            // listview_main
+            // _listviewMain
             // 
-            listview_main.AllowDrop = true;
-            listview_main.BackColor = Color.White;
-            listview_main.BorderStyle = BorderStyle.None;
-            listview_main.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader3, columnHeader2 });
-            listview_main.Dock = DockStyle.Fill;
-            listview_main.Font = new Font("Microsoft YaHei", 8.25F);
-            listview_main.FullRowSelect = true;
-            listview_main.Location = new Point(0, 0);
-            listview_main.Margin = new Padding(4, 3, 4, 3);
-            listview_main.Name = "listview_main";
-            listview_main.Size = new Size(715, 478);
-            listview_main.TabIndex = 5;
-            listview_main.UseCompatibleStateImageBehavior = false;
-            listview_main.View = View.Details;
-            listview_main.MouseClick += action_listview_click;
-            listview_main.MouseDoubleClick += action_listview_doubleclick;
+            _listviewMain.AllowDrop = true;
+            _listviewMain.BackColor = System.Drawing.Color.White;
+            _listviewMain.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            _listviewMain.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { columnHeader1, columnHeader3, columnHeader2 });
+            _listviewMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            _listviewMain.Font = new System.Drawing.Font("Microsoft YaHei", 8.25F);
+            _listviewMain.FullRowSelect = true;
+            _listviewMain.Location = new System.Drawing.Point(0, 0);
+            _listviewMain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            _listviewMain.Name = "_listviewMain";
+            _listviewMain.Size = new System.Drawing.Size(469, 478);
+            _listviewMain.TabIndex = 5;
+            _listviewMain.UseCompatibleStateImageBehavior = false;
+            _listviewMain.View = System.Windows.Forms.View.Details;
+            _listviewMain.SelectedIndexChanged += ActionSelectItemChanged;
+            _listviewMain.MouseClick += ActionListViewClick;
+            _listviewMain.MouseDoubleClick += ActionListviewDoubleclick;
             // 
             // columnHeader1
             // 
+            columnHeader1.Name = "columnHeader1";
             columnHeader1.Tag = "col_name";
             columnHeader1.Text = "col_name";
             columnHeader1.Width = 104;
             // 
             // columnHeader3
             // 
+            columnHeader3.Name = "columnHeader3";
             columnHeader3.Tag = "col_type";
             columnHeader3.Text = "col_type";
             columnHeader3.Width = 125;
             // 
             // columnHeader2
             // 
+            columnHeader2.Name = "columnHeader2";
             columnHeader2.Tag = "col_size";
             columnHeader2.Text = "col_size";
-            columnHeader2.TextAlign = HorizontalAlignment.Right;
+            columnHeader2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             columnHeader2.Width = 75;
             // 
-            // dialog_singleFile
+            // _dialogSingleFile
             // 
-            dialog_singleFile.Filter = "RhoFile|*.Rho|Nho|*.nho";
+            _dialogSingleFile.Filter = "Rho and Jmd File | *.rho;*.jmd";
             // 
-            // dialog_multiFile
+            // _dialogMultiFile
             // 
-            dialog_multiFile.Filter = "RhoFile|*.Rho";
-            dialog_multiFile.Multiselect = true;
+            _dialogMultiFile.Filter = "Rho or Jmd File|*.rho;*.jmd";
+            _dialogMultiFile.Multiselect = true;
             // 
             // imageList_listview
             // 
-            imageList_listview.ColorDepth = ColorDepth.Depth8Bit;
-            imageList_listview.ImageSize = new Size(16, 16);
-            imageList_listview.TransparentColor = Color.Transparent;
+            imageList_listview.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
+            imageList_listview.ImageSize = new System.Drawing.Size(16, 16);
+            imageList_listview.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // contextMenu_list
             // 
-            contextMenu_list.Items.AddRange(new ToolStripItem[] { filemenu_extractfile, filemenu_extract_selected, filemenu_convertPNG, filemenu_convertXML });
+            contextMenu_list.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { fileMenuExtractfile, fileMenuExtractSelected, fileMenuConvertPNG, fileMenuConvertXML });
             contextMenu_list.Name = "FileMenu";
-            contextMenu_list.Size = new Size(211, 92);
+            contextMenu_list.Size = new System.Drawing.Size(210, 92);
             // 
-            // filemenu_extractfile
+            // fileMenuExtractfile
             // 
-            filemenu_extractfile.Name = "filemenu_extractfile";
-            filemenu_extractfile.Size = new Size(210, 22);
-            filemenu_extractfile.Tag = "filemenu_extractfile";
-            filemenu_extractfile.Text = "filemenu_extractfile";
-            filemenu_extractfile.Click += action_extractfile;
+            fileMenuExtractfile.Name = "fileMenuExtractfile";
+            fileMenuExtractfile.Size = new System.Drawing.Size(209, 22);
+            fileMenuExtractfile.Tag = "filemenu_extractfile";
+            fileMenuExtractfile.Text = "filemenu_extractfile";
+            fileMenuExtractfile.Click += ActionExtractfile;
             // 
-            // filemenu_extract_selected
+            // fileMenuExtractSelected
             // 
-            filemenu_extract_selected.Name = "filemenu_extract_selected";
-            filemenu_extract_selected.Size = new Size(210, 22);
-            filemenu_extract_selected.Tag = "filemenu_extract_selected";
-            filemenu_extract_selected.Text = "filemenu_extract_selected";
-            filemenu_extract_selected.Click += action_extract_selected;
+            fileMenuExtractSelected.Name = "fileMenuExtractSelected";
+            fileMenuExtractSelected.Size = new System.Drawing.Size(209, 22);
+            fileMenuExtractSelected.Tag = "filemenu_extract_selected";
+            fileMenuExtractSelected.Text = "filemenu_extract_selected";
+            fileMenuExtractSelected.Click += ActionExtractSelected;
             // 
-            // filemenu_convertPNG
+            // fileMenuConvertPNG
             // 
-            filemenu_convertPNG.Name = "filemenu_convertPNG";
-            filemenu_convertPNG.Size = new Size(210, 22);
-            filemenu_convertPNG.Tag = "filemenu_convertPng";
-            filemenu_convertPNG.Text = "filemenu_convertPng";
-            filemenu_convertPNG.Click += action_convert_png;
+            fileMenuConvertPNG.Name = "fileMenuConvertPNG";
+            fileMenuConvertPNG.Size = new System.Drawing.Size(209, 22);
+            fileMenuConvertPNG.Tag = "filemenu_convertPng";
+            fileMenuConvertPNG.Text = "filemenu_convertPng";
+            fileMenuConvertPNG.Click += ActionConvertPng;
             // 
-            // filemenu_convertXML
+            // fileMenuConvertXML
             // 
-            filemenu_convertXML.Name = "filemenu_convertXML";
-            filemenu_convertXML.Size = new Size(210, 22);
-            filemenu_convertXML.Tag = "filemenu_convertXML";
-            filemenu_convertXML.Text = "filemenu_convertXML";
-            filemenu_convertXML.Click += action_convert_xml;
+            fileMenuConvertXML.Name = "fileMenuConvertXML";
+            fileMenuConvertXML.Size = new System.Drawing.Size(209, 22);
+            fileMenuConvertXML.Tag = "filemenu_convertXML";
+            fileMenuConvertXML.Text = "filemenu_convertXML";
+            fileMenuConvertXML.Click += ActionConvertXml;
             // 
-            // treeview_explorer
+            // _treeViewExplorer
             // 
-            treeview_explorer.Dock = DockStyle.Fill;
-            treeview_explorer.DrawMode = TreeViewDrawMode.OwnerDrawAll;
-            treeview_explorer.FullRowSelect = true;
-            treeview_explorer.ItemHeight = 20;
-            treeview_explorer.Location = new Point(0, 0);
-            treeview_explorer.Name = "treeview_explorer";
-            treeview_explorer.ShowPlusMinus = false;
-            treeview_explorer.Size = new Size(250, 478);
-            treeview_explorer.TabIndex = 0;
-            treeview_explorer.Tag = "treeview_explorer";
-            treeview_explorer.AfterSelect += action_node_select;
+            _treeViewExplorer.Dock = System.Windows.Forms.DockStyle.Fill;
+            _treeViewExplorer.FullRowSelect = true;
+            _treeViewExplorer.ItemHeight = 20;
+            _treeViewExplorer.Location = new System.Drawing.Point(0, 0);
+            _treeViewExplorer.Name = "_treeViewExplorer";
+            _treeViewExplorer.ShowPlusMinus = false;
+            _treeViewExplorer.Size = new System.Drawing.Size(250, 478);
+            _treeViewExplorer.TabIndex = 0;
+            _treeViewExplorer.Tag = "treeview_explorer";
+            _treeViewExplorer.AfterSelect += ActionNodeSelect;
             // 
             // split_main
             // 
-            split_main.Dock = DockStyle.Fill;
-            split_main.Location = new Point(0, 48);
+            split_main.Dock = System.Windows.Forms.DockStyle.Fill;
+            split_main.Location = new System.Drawing.Point(0, 48);
             split_main.Name = "split_main";
             // 
             // split_main.Panel1
             // 
-            split_main.Panel1.Controls.Add(treeview_explorer);
+            split_main.Panel1.Controls.Add(_treeViewExplorer);
             split_main.Panel1MinSize = 250;
             // 
             // split_main.Panel2
             // 
-            split_main.Panel2.Controls.Add(listview_main);
+            split_main.Panel2.Controls.Add(splitContainer1);
             split_main.Panel2MinSize = 315;
-            split_main.Size = new Size(967, 478);
+            split_main.Size = new System.Drawing.Size(967, 478);
             split_main.SplitterDistance = 250;
             split_main.SplitterWidth = 2;
             split_main.TabIndex = 0;
             // 
+            // splitContainer1
+            // 
+            splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            splitContainer1.Location = new System.Drawing.Point(0, 0);
+            splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            splitContainer1.Panel1.Controls.Add(_listviewMain);
+            // 
+            // splitContainer1.Panel2
+            // 
+            splitContainer1.Panel2.BackColor = System.Drawing.Color.WhiteSmoke;
+            splitContainer1.Panel2.Controls.Add(_previewPanel);
+            splitContainer1.Size = new System.Drawing.Size(715, 478);
+            splitContainer1.SplitterDistance = 469;
+            splitContainer1.TabIndex = 6;
+            // 
+            // _previewPanel
+            // 
+            _previewPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            _previewPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            _previewPanel.Location = new System.Drawing.Point(0, 0);
+            _previewPanel.Name = "_previewPanel";
+            _previewPanel.Size = new System.Drawing.Size(242, 478);
+            _previewPanel.TabIndex = 0;
+            _previewPanel.CreateControl += ActionCreatePreviewControl;
+            _previewPanel.InitControl += ActionInitPreviewControl;
+            // 
             // panel_topbar
             // 
             panel_topbar.Controls.Add(textbox_path);
-            panel_topbar.Controls.Add(icon_back);
-            panel_topbar.Dock = DockStyle.Top;
-            panel_topbar.Location = new Point(0, 24);
+            panel_topbar.Controls.Add(_iconBack);
+            panel_topbar.Dock = System.Windows.Forms.DockStyle.Top;
+            panel_topbar.Location = new System.Drawing.Point(0, 24);
             panel_topbar.Name = "panel_topbar";
-            panel_topbar.Size = new Size(967, 24);
+            panel_topbar.Size = new System.Drawing.Size(967, 24);
             panel_topbar.TabIndex = 7;
             // 
             // textbox_path
             // 
-            textbox_path.BackColor = Color.White;
-            textbox_path.Dock = DockStyle.Fill;
-            textbox_path.Font = new Font("Segoe UI Variable Display Semib", 9F, FontStyle.Bold);
-            textbox_path.Location = new Point(24, 0);
-            textbox_path.Margin = new Padding(0);
+            textbox_path.BackColor = System.Drawing.Color.White;
+            textbox_path.Dock = System.Windows.Forms.DockStyle.Fill;
+            textbox_path.Font = new System.Drawing.Font("Segoe UI Variable Display Semib", 9F, System.Drawing.FontStyle.Bold);
+            textbox_path.Location = new System.Drawing.Point(24, 0);
+            textbox_path.Margin = new System.Windows.Forms.Padding(0);
             textbox_path.Name = "textbox_path";
             textbox_path.ReadOnly = true;
-            textbox_path.Size = new Size(943, 23);
+            textbox_path.Size = new System.Drawing.Size(943, 23);
             textbox_path.TabIndex = 0;
             // 
-            // icon_back
+            // _iconBack
             // 
-            icon_back.Dock = DockStyle.Left;
-            icon_back.Enabled = false;
-            icon_back.Image = Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled_disabled;
-            icon_back.Location = new Point(0, 0);
-            icon_back.Name = "icon_back";
-            icon_back.Size = new Size(24, 24);
-            icon_back.SizeMode = PictureBoxSizeMode.CenterImage;
-            icon_back.TabIndex = 1;
-            icon_back.TabStop = false;
-            icon_back.EnabledChanged += action_icon_enable_changed;
-            icon_back.Click += action_back;
+            _iconBack.Dock = System.Windows.Forms.DockStyle.Left;
+            _iconBack.Enabled = false;
+            _iconBack.Image = global::RhoLoader.Properties.Resources.ic_fluent_arrow_hook_up_left_24_filled_disabled;
+            _iconBack.Location = new System.Drawing.Point(0, 0);
+            _iconBack.Name = "_iconBack";
+            _iconBack.Size = new System.Drawing.Size(24, 24);
+            _iconBack.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            _iconBack.TabIndex = 1;
+            _iconBack.TabStop = false;
+            _iconBack.EnabledChanged += ActionIconEnableChanged;
+            _iconBack.Click += ActionBack;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new System.Drawing.Size(32, 19);
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new System.Drawing.Size(32, 19);
+            // 
+            // toolStripMenuItem3
+            // 
+            toolStripMenuItem3.Name = "toolStripMenuItem3";
+            toolStripMenuItem3.Size = new System.Drawing.Size(32, 19);
             // 
             // MainWindow
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.White;
-            ClientSize = new Size(967, 526);
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            BackColor = System.Drawing.Color.White;
+            ClientSize = new System.Drawing.Size(967, 526);
             Controls.Add(split_main);
             Controls.Add(panel_topbar);
             Controls.Add(menu);
             MainMenuStrip = menu;
-            Margin = new Padding(4, 3, 4, 3);
-            Name = "MainWindow";
+            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             Tag = "title";
             Text = "title";
             menu.ResumeLayout(false);
@@ -382,24 +442,39 @@ namespace RhoLoader
             split_main.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)split_main).EndInit();
             split_main.ResumeLayout(false);
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
             panel_topbar.ResumeLayout(false);
             panel_topbar.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)icon_back).EndInit();
+            ((System.ComponentModel.ISupportInitialize)_iconBack).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
+
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem3;
+
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;
+
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+
+        private System.Windows.Forms.SplitContainer splitContainer1;
+
+        private System.Windows.Forms.FolderBrowserDialog _dialogExtractSelector;
+
+        private System.Windows.Forms.FolderBrowserDialog _dialogKartData;
 
         #endregion
 
         private System.Windows.Forms.MenuStrip menu;
         private System.Windows.Forms.ToolStripMenuItem menu_file;
         private System.Windows.Forms.ToolStripMenuItem menu_file_open;
-        private System.Windows.Forms.ToolStripMenuItem menu_file_openFiles;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem menu_file_exit;
-        private System.Windows.Forms.ListView listview_main;
-        private System.Windows.Forms.OpenFileDialog dialog_singleFile;
-        private System.Windows.Forms.OpenFileDialog dialog_multiFile;
+        private System.Windows.Forms.ListView _listviewMain;
+        private System.Windows.Forms.OpenFileDialog _dialogSingleFile;
+        private System.Windows.Forms.OpenFileDialog _dialogMultiFile;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private System.Windows.Forms.ColumnHeader columnHeader3;
@@ -408,20 +483,22 @@ namespace RhoLoader
         private System.Windows.Forms.ToolStripMenuItem menu_extract;
         private System.Windows.Forms.ToolStripMenuItem menu_extract_all;
         private System.Windows.Forms.ToolStripMenuItem menu_lang;
+        private System.Windows.Forms.ToolStripMenuItem menu_debug;
         private System.Windows.Forms.ToolStripMenuItem menu_extract_current;
         private System.Windows.Forms.ContextMenuStrip contextMenu_list;
-        private System.Windows.Forms.ToolStripMenuItem filemenu_extractfile;
-        private System.Windows.Forms.ToolStripMenuItem filemenu_convertPNG;
-        private System.Windows.Forms.ToolStripMenuItem filemenu_convertXML;
-        private System.Windows.Forms.ToolStripMenuItem filemenu_extract_selected;
-        private ToolStripMenuItem menu_file_openFolder;
-        private SplitContainer split_main;
-        private Panel panel_topbar;
-        private TextBox textbox_path;
-        private PictureBox icon_back;
-        private DarkTreeView treeview_explorer;
+        private System.Windows.Forms.ToolStripMenuItem fileMenuExtractfile;
+        private System.Windows.Forms.ToolStripMenuItem fileMenuConvertPNG;
+        private System.Windows.Forms.ToolStripMenuItem fileMenuConvertXML;
+        private System.Windows.Forms.ToolStripMenuItem fileMenuExtractSelected;
+        private System.Windows.Forms.ToolStripMenuItem menu_file_openFolderKr;
+        private System.Windows.Forms.ToolStripMenuItem menu_file_openFolderRc;
+        private System.Windows.Forms.SplitContainer split_main;
+        private System.Windows.Forms.Panel panel_topbar;
+        private System.Windows.Forms.TextBox textbox_path;
+        private RhoLoader.Controls.PreviewPanel.PreviewPanel _previewPanel;
+        private PictureBox _iconBack;
+        private RhoLoader.Controls.DarkTreeView _treeViewExplorer;
         private ToolStripMenuItem menuToolStripMenuItem;
-        private ToolStripMenuItem menumodeToolStripMenuItem;
     }
 }
 

@@ -12,7 +12,7 @@ namespace KartLibrary.IO
     [AttributeUsage(AttributeTargets.Class)]
     public class KartObjectImplementAttribute : Attribute
     {
-        public CreateObjectFunc? CreateObjectMethod;
+        public CreateObjectFunc? CreateObjectMethod { get; set; }
 
         public KartObjectImplementAttribute()
         {

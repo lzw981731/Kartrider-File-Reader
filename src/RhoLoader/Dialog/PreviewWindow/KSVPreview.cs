@@ -7,17 +7,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KartCity.Common.Xml;
 using KartLibrary;
+using KartLibrary.Game.Record;
 using KartLibrary.Record;
 using KartLibrary.Xml;
 using RhoLoader.Setting;
 
 namespace RhoLoader.PreviewWindow
 {
-    public partial class KSVPreview : Form
+    public partial class KsvPreview : Form
     {
         BinaryXmlTag LocaleData;
-        public KSVPreview(byte[] Data, BinaryXmlTag LocaleData = null)
+        public KsvPreview(byte[] Data, BinaryXmlTag LocaleData = null)
         {
             InitializeComponent();
             this.LocaleData = LocaleData;
@@ -39,7 +41,7 @@ namespace RhoLoader.PreviewWindow
                     _ => ksvinfo.ContestType.ToString()
                 }}));
             infoBox.Items.Add(new ListViewItem(new string[] { "ksv_RecordingDate".GetStringBag(), $"{ksvinfo.RecordingDate:yyyy/MM/dd HH:mm:ss}"}));
-            infoBox.Items.Add(new ListViewItem(new string[] { "ksv_Region".GetStringBag(), ksvinfo.RegionCode.ToString()}));
+            infoBox.Items.Add(new ListViewItem(new string[] { "ksv_Region".GetStringBag(), ksvinfo.CountryCode.ToString()}));
             infoBox.Items.Add(new ListViewItem(new string[] { "ksv_TrackName".GetStringBag(), ReadTrackName(ksvinfo.TrackName) }));
             foreach (PlayerInfo pi in ksvinfo.Players)
             {
@@ -76,7 +78,7 @@ namespace RhoLoader.PreviewWindow
         {
             if (LocaleData is null)
                 return track_name;
-            BinaryXmlTag? found_tag = LocaleData.Children.Find(x=>x.GetAttribute("id") == track_name);
+            BinaryXmlTag? found_tag = LocaleData.Children.Where(x=>x.GetAttribute("id") == track_name).First();
             if(found_tag is not null)
                 return found_tag.GetAttribute("name");
             else

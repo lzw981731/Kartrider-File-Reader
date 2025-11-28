@@ -28,155 +28,153 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.btn_cancel = new System.Windows.Forms.Button();
-            this.label5 = new System.Windows.Forms.Label();
-            this.statusText = new System.Windows.Forms.Label();
-            this.progress_main = new RhoLoader.Controls.DarkProgressBar();
-            this.label_extract = new System.Windows.Forms.Label();
-            this.label_extracting = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label_progress = new System.Windows.Forms.Label();
-            this.text_extract_file = new System.Windows.Forms.Label();
-            this.text_progress = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            btn_cancel = new System.Windows.Forms.Button();
+            label5 = new System.Windows.Forms.Label();
+            statusText = new System.Windows.Forms.Label();
+            progressMain = new RhoLoader.Controls.DarkProgressBar();
+            label_extract = new System.Windows.Forms.Label();
+            label_extracting = new System.Windows.Forms.Label();
+            label2 = new System.Windows.Forms.Label();
+            label_progress = new System.Windows.Forms.Label();
+            textExtractFile = new System.Windows.Forms.Label();
+            textProgress = new System.Windows.Forms.Label();
+            SuspendLayout();
             // 
             // btn_cancel
             // 
-            this.btn_cancel.Font = new System.Drawing.Font("Segoe UI Variable Display", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btn_cancel.ForeColor = System.Drawing.Color.Black;
-            this.btn_cancel.Location = new System.Drawing.Point(481, 115);
-            this.btn_cancel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btn_cancel.Name = "btn_cancel";
-            this.btn_cancel.Size = new System.Drawing.Size(118, 34);
-            this.btn_cancel.TabIndex = 4;
-            this.btn_cancel.Text = "Cancel";
-            this.btn_cancel.UseVisualStyleBackColor = true;
-            this.btn_cancel.Click += new System.EventHandler(this.action_cancel);
+            btn_cancel.Font = new System.Drawing.Font("Segoe UI Variable Display", 9F);
+            btn_cancel.ForeColor = System.Drawing.Color.Black;
+            btn_cancel.Location = new System.Drawing.Point(481, 115);
+            btn_cancel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btn_cancel.Name = "btn_cancel";
+            btn_cancel.Size = new System.Drawing.Size(118, 34);
+            btn_cancel.TabIndex = 4;
+            btn_cancel.Text = "Cancel";
+            btn_cancel.UseVisualStyleBackColor = true;
+            btn_cancel.Click += actionCancel;
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(69, 18);
-            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(0, 15);
-            this.label5.TabIndex = 6;
+            label5.AutoSize = true;
+            label5.Location = new System.Drawing.Point(69, 18);
+            label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new System.Drawing.Size(0, 15);
+            label5.TabIndex = 6;
             // 
             // statusText
             // 
-            this.statusText.AutoSize = true;
-            this.statusText.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.statusText.Location = new System.Drawing.Point(68, 18);
-            this.statusText.Name = "statusText";
-            this.statusText.Size = new System.Drawing.Size(0, 14);
-            this.statusText.TabIndex = 8;
+            statusText.AutoSize = true;
+            statusText.Font = new System.Drawing.Font("Consolas", 9F);
+            statusText.Location = new System.Drawing.Point(68, 18);
+            statusText.Name = "statusText";
+            statusText.Size = new System.Drawing.Size(0, 14);
+            statusText.TabIndex = 8;
             // 
-            // progress_main
+            // progressMain
             // 
-            this.progress_main.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(225)))), ((int)(((byte)(225)))), ((int)(((byte)(225)))));
-            this.progress_main.Location = new System.Drawing.Point(-5, 97);
-            this.progress_main.MaxValue = 100D;
-            this.progress_main.Name = "progress_main";
-            this.progress_main.Size = new System.Drawing.Size(617, 5);
-            this.progress_main.TabIndex = 9;
-            this.progress_main.Value = 0D;
+            progressMain.BackColor = System.Drawing.Color.FromArgb(((int)((byte)225)), ((int)((byte)225)), ((int)((byte)225)));
+            progressMain.Location = new System.Drawing.Point(-5, 97);
+            progressMain.MaxValue = 1D;
+            progressMain.Name = "progressMain";
+            progressMain.Size = new System.Drawing.Size(617, 5);
+            progressMain.TabIndex = 9;
+            progressMain.Value = 0D;
             // 
             // label_extract
             // 
-            this.label_extract.Font = new System.Drawing.Font("Segoe UI Variable Display", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label_extract.Location = new System.Drawing.Point(0, 0);
-            this.label_extract.Name = "label_extract";
-            this.label_extract.Padding = new System.Windows.Forms.Padding(25, 0, 0, 0);
-            this.label_extract.Size = new System.Drawing.Size(330, 70);
-            this.label_extract.TabIndex = 10;
-            this.label_extract.Text = "Extracting...";
-            this.label_extract.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            label_extract.Font = new System.Drawing.Font("Segoe UI Variable Display", 24F);
+            label_extract.Location = new System.Drawing.Point(0, 0);
+            label_extract.Name = "label_extract";
+            label_extract.Padding = new System.Windows.Forms.Padding(25, 0, 0, 0);
+            label_extract.Size = new System.Drawing.Size(330, 70);
+            label_extract.TabIndex = 10;
+            label_extract.Text = "Extracting...";
+            label_extract.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // label_extracting
             // 
-            this.label_extracting.Font = new System.Drawing.Font("Segoe UI Variable Display Semib", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label_extracting.Location = new System.Drawing.Point(18, 70);
-            this.label_extracting.Name = "label_extracting";
-            this.label_extracting.Size = new System.Drawing.Size(81, 23);
-            this.label_extracting.TabIndex = 11;
-            this.label_extracting.Text = "Extracting:";
-            this.label_extracting.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            label_extracting.Font = new System.Drawing.Font("Segoe UI Variable Display Semib", 9.75F, System.Drawing.FontStyle.Bold);
+            label_extracting.Location = new System.Drawing.Point(18, 70);
+            label_extracting.Name = "label_extracting";
+            label_extracting.Size = new System.Drawing.Size(81, 23);
+            label_extracting.TabIndex = 11;
+            label_extracting.Text = "Extracting:";
+            label_extracting.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 86);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(0, 15);
-            this.label2.TabIndex = 12;
+            label2.AutoSize = true;
+            label2.Location = new System.Drawing.Point(12, 86);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(0, 15);
+            label2.TabIndex = 12;
             // 
             // label_progress
             // 
-            this.label_progress.Font = new System.Drawing.Font("Segoe UI Variable Display Semib", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label_progress.Location = new System.Drawing.Point(25, 105);
-            this.label_progress.Name = "label_progress";
-            this.label_progress.Size = new System.Drawing.Size(74, 23);
-            this.label_progress.TabIndex = 13;
-            this.label_progress.Text = "Progress:";
-            this.label_progress.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            label_progress.Font = new System.Drawing.Font("Segoe UI Variable Display Semib", 9.75F, System.Drawing.FontStyle.Bold);
+            label_progress.Location = new System.Drawing.Point(25, 105);
+            label_progress.Name = "label_progress";
+            label_progress.Size = new System.Drawing.Size(74, 23);
+            label_progress.TabIndex = 13;
+            label_progress.Text = "Progress:";
+            label_progress.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // text_extract_file
+            // textExtractFile
             // 
-            this.text_extract_file.Font = new System.Drawing.Font("Segoe UI Variable Display", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.text_extract_file.Location = new System.Drawing.Point(112, 70);
-            this.text_extract_file.Name = "text_extract_file";
-            this.text_extract_file.Size = new System.Drawing.Size(487, 23);
-            this.text_extract_file.TabIndex = 14;
-            this.text_extract_file.Text = "etc_/test.1s";
-            this.text_extract_file.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            textExtractFile.Font = new System.Drawing.Font("Segoe UI Variable Display", 10F);
+            textExtractFile.Location = new System.Drawing.Point(112, 70);
+            textExtractFile.Name = "textExtractFile";
+            textExtractFile.Size = new System.Drawing.Size(487, 23);
+            textExtractFile.TabIndex = 14;
+            textExtractFile.Text = "etc_/test.1s";
+            textExtractFile.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // text_progress
+            // textProgress
             // 
-            this.text_progress.Font = new System.Drawing.Font("Segoe UI Variable Display", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.text_progress.Location = new System.Drawing.Point(112, 105);
-            this.text_progress.Name = "text_progress";
-            this.text_progress.Size = new System.Drawing.Size(109, 23);
-            this.text_progress.TabIndex = 15;
-            this.text_progress.Text = "3 / 256";
-            this.text_progress.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            textProgress.Font = new System.Drawing.Font("Segoe UI Variable Display", 10F);
+            textProgress.Location = new System.Drawing.Point(112, 105);
+            textProgress.Name = "textProgress";
+            textProgress.Size = new System.Drawing.Size(109, 23);
+            textProgress.TabIndex = 15;
+            textProgress.Text = "3 / 256";
+            textProgress.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // ExtractFolder
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
-            this.ClientSize = new System.Drawing.Size(612, 160);
-            this.Controls.Add(this.text_progress);
-            this.Controls.Add(this.text_extract_file);
-            this.Controls.Add(this.label_progress);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.label_extracting);
-            this.Controls.Add(this.label_extract);
-            this.Controls.Add(this.progress_main);
-            this.Controls.Add(this.statusText);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.btn_cancel);
-            this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(235)))), ((int)(((byte)(235)))));
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Name = "ExtractFolder";
-            this.Text = "dialog_extract_folder";
-            this.Shown += new System.EventHandler(this.action_show);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            BackColor = System.Drawing.Color.FromArgb(((int)((byte)32)), ((int)((byte)32)), ((int)((byte)32)));
+            ClientSize = new System.Drawing.Size(612, 160);
+            Controls.Add(textProgress);
+            Controls.Add(textExtractFile);
+            Controls.Add(label_progress);
+            Controls.Add(label2);
+            Controls.Add(label_extracting);
+            Controls.Add(label_extract);
+            Controls.Add(progressMain);
+            Controls.Add(statusText);
+            Controls.Add(label5);
+            Controls.Add(btn_cancel);
+            ForeColor = System.Drawing.Color.FromArgb(((int)((byte)235)), ((int)((byte)235)), ((int)((byte)235)));
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            Text = "dialog_extract_folder";
+            Shown += actionShow;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
         private System.Windows.Forms.Button btn_cancel;
         private System.Windows.Forms.Label label5;
         private Label statusText;
-        private Controls.DarkProgressBar progress_main;
-        private Label label_extract;
+        private RhoLoader.Controls.DarkProgressBar progressMain;
+        private System.Windows.Forms.Label label_extract;
         private Label label_extracting;
         private Label label2;
         private Label label_progress;
-        private Label text_extract_file;
-        private Label text_progress;
+        private Label textExtractFile;
+        private Label textProgress;
     }
 }

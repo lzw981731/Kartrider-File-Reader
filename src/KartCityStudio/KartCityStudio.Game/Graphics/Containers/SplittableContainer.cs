@@ -9,10 +9,12 @@ using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Layout;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osuTK;
 
 namespace KartCityStudio.Game.Graphics.Containers
 {
@@ -20,6 +22,7 @@ namespace KartCityStudio.Game.Graphics.Containers
     {
         private const float min_container_size = 15;
         private readonly SplitterBarContainer splitterBar;
+        private readonly Container contentContainer;
         private float splitterBarRelativePos = 0.5f;
         public Container FirstContainer { get; }
         public Container SecondContainer { get; }
@@ -27,34 +30,69 @@ namespace KartCityStudio.Game.Graphics.Containers
 
         public float FirstContainerSize { get; set; }
 
+        public float SplitterBarPosition
+        {
+            get => splitterBarRelativePos;
+            set
+            {
+                splitterBarRelativePos = value;
+                Scheduler.AddOnce(updateSize);
+            }
+        }
+
+        public new bool Masking
+        {
+            get => base.Masking;
+            set => base.Masking = value;
+        }
+
+        public new float CornerRadius
+        {
+            get => base.CornerRadius;
+            set => base.CornerRadius = value;
+        }
+
+        public new float MaskingSmoothness
+        {
+            get => base.MaskingSmoothness;
+            set => base.MaskingSmoothness = value;
+        }
+
+        public new float CornerExponent
+        {
+            get => base.CornerExponent;
+            set => base.CornerExponent = value;
+        }
+
         protected SplittableContainer(Direction splitDirection)
         {
-            SplitDirection = splitDirection;
 
+            SplitDirection = splitDirection;
             Axes splitAxes = SplitDirection == Direction.Horizontal ? Axes.X : Axes.Y;
             splitterBar = CreateSplitterBar(splitDirection);
-            AddRangeInternal(new Drawable[]
+            InternalChildren = new Drawable[]
             {
                 FirstContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Both & ~splitAxes,
-                    Masking = true,
+                    Masking = true
                 },
-                splitterBar,
                 SecondContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Both & ~splitAxes,
-                    Masking = true,
-                }
-            });
+                    Masking = true
+                },
+                splitterBar,
+            };
 
             splitterBar.Dragged = onSplitterBarMovement;
+            splitterBar.Origin = SplitDirection == Direction.Horizontal ? Anchor.TopCentre : Anchor.CentreLeft;
 
         }
+
         protected override void UpdateAfterChildren()
         {
             base.UpdateAfterChildren();
-
         }
 
         protected abstract SplitterBarContainer CreateSplitterBar(Direction direction);
@@ -74,6 +112,11 @@ namespace KartCityStudio.Game.Graphics.Containers
 
             protected override bool OnClick(ClickEvent e) => true;
 
+            protected override void UpdateAfterChildren()
+            {
+                base.UpdateAfterChildren();
+            }
+
             protected override bool OnMouseDown(MouseDownEvent e)
             {
                 if(e.Button != osuTK.Input.MouseButton.Left) return false;
@@ -88,7 +131,7 @@ namespace KartCityStudio.Game.Graphics.Containers
             {
                 if (e.Button != osuTK.Input.MouseButton.Left) return false;
 
-                dragOffset = e.MousePosition[(int)Direction] - Position[(int)Direction];
+                dragOffset = e.MousePosition[(int)Direction] - Position[(int)Direction] - (DrawSize[(int)Direction] / 2);
 
                 return true;
             }
@@ -110,14 +153,14 @@ namespace KartCityStudio.Game.Graphics.Containers
             float splitterSize = splitterBar.DrawSize[(int)SplitDirection];
             float maxSplitterPosition = availableSize - min_container_size - splitterSize;
             value = Math.Clamp(value, min_container_size, maxSplitterPosition);
-            splitterBarRelativePos = value / (availableSize - splitterSize);
-            Scheduler.AddOnce(updateSize);
+            SplitterBarPosition = value / (availableSize);
         }
 
         private void updateSize()
         {
             float availableSize = DrawSize[(int)SplitDirection];
-            float splitterSize = splitterBar.DrawSize[(int)SplitDirection];
+            float splitterDrawSize = splitterBar.DrawSize[(int)SplitDirection];
+            float splitterSize = 1; // splitterBar.DrawSize[(int)SplitDirection];
             float value = splitterBarRelativePos * (availableSize - splitterSize);
             splitterBar.Position = SplitDirection == Direction.Horizontal ? new osuTK.Vector2(value, 0) : new osuTK.Vector2(0, value);
             FirstContainer.Size = SplitDirection == Direction.Horizontal ? new osuTK.Vector2(value, 1) : new osuTK.Vector2(1, value);
@@ -129,6 +172,7 @@ namespace KartCityStudio.Game.Graphics.Containers
         {
             if((invalidation & Invalidation.DrawSize) != Invalidation.None)
                 Scheduler.AddOnce(updateSize);
+
             return base.OnInvalidate(invalidation, source);
         }
     }

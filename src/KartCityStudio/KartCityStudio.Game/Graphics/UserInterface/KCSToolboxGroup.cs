@@ -41,6 +41,12 @@ namespace KartCityStudio.Game.Graphics.UserInterface
             }
         }
 
+        public Colour4 BackgroundColour
+        {
+            get => background.Colour;
+            set => background.Colour = value;
+        }
+
         protected override Container<Drawable> Content => childContainer;
 
         public KCSToolboxGroup()
@@ -68,7 +74,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                         {
                             RelativeSizeAxes = Axes.X,
                             Masking = true,
-                            Padding = new MarginPadding() { Top = 0, Bottom = 7, Horizontal = 13}
+                            Padding = new MarginPadding() { Top = 0, Bottom = 10f, Horizontal = 10f}
                         }
                     }
                 }
@@ -156,7 +162,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                     RelativePositionAxes = Axes.None,
                     X = 20,
                     Y = 0,
-                    Font = KCSFont.Default.With(size: 17f),
+                    Font = KCSFont.Default,
                     Colour = Colour4.White
                 }
             };

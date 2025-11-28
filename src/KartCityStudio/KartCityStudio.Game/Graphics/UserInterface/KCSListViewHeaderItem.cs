@@ -72,16 +72,23 @@ namespace KartCityStudio.Game.Graphics.UserInterface
                 Anchor = Anchor.CentreLeft;
                 Origin = Anchor.CentreLeft;
                 AutoSizeAxes = Axes.Y;
-                Children = new Drawable[]
+                Child = new FillFlowContainer()
                 {
-                    listBoxItemText = new SpriteText()
+                    Direction = FillDirection.Horizontal,
+                    AutoSizeAxes = Axes.X,
+                    Height = 25f,
+                    Children = new Drawable[]
                     {
-                        AlwaysPresent = true,
-                        Font = KCSFont.Default.With(size : 17f),
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
-                        Shadow = true,
-                        Margin = new MarginPadding { Horizontal = 22, Vertical = 4 }
+
+                        listBoxItemText = new SpriteText()
+                        {
+                            AlwaysPresent = true,
+                            Font = KCSFont.Default,
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Shadow = true,
+                            Margin = new MarginPadding { Horizontal = 22, Vertical = 4 }
+                        }
                     }
                 };
             }

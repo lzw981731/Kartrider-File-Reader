@@ -40,7 +40,7 @@ namespace KartCityStudio.Game.Graphics.UserInterface
         [BackgroundDependencyLoader]
         private void load()
         {
-            //AutoSizeAxes = Axes.X;
+
         }
 
         protected override Menu CreateSubMenu() => new KCSSubMenu();

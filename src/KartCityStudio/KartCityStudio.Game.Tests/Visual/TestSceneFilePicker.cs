@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using KartCityStudio.Game.Graphics.UserInterface;
 using NUnit.Framework;
 using osu.Framework.Graphics;
@@ -17,6 +18,21 @@ namespace KartCityStudio.Game.Tests.Visual
             Add(filePicker = new KCSFilePicker()
             {
                 RelativeSizeAxes = Axes.Both,
+            });
+
+            AddStep("Clear file name filter", () =>
+            {
+                filePicker.FileNameFilter = null;
+            });
+
+            AddStep("Change file name filter to rho|rho5.", () =>
+            {
+                filePicker.FileNameFilter = new Regex(@".*\.(rho|rho5)");
+            });
+
+            AddStep("Change file name filter to dll|exe", () =>
+            {
+                filePicker.FileNameFilter = new Regex(@".*\.(dll|exe)");
             });
         }
     }

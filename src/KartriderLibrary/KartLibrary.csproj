@@ -1,23 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>KartLibrary</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <BaseOutputPath>bin</BaseOutputPath>
-    <AssemblyVersion>24.1.31.1</AssemblyVersion>
-    <FileVersion>24.1.31.1</FileVersion>
+    <AssemblyVersion>25.7.31.1</AssemblyVersion>
+    <FileVersion>25.7.31.1</FileVersion>
     <SignAssembly>False</SignAssembly>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>portable</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Debug\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>
+    <OutputPath>..\..\build\out\$(MSBuildProjectName)\Release\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,13 +30,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Game\Engine\Render\Shaders\Relement\vertexShader.glsl" />
+    <None Remove="Game\Engine\Render\Shaders\Relement\fragmentShader.glsl" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DotNetZip" Version="1.16.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Pfim" Version="0.11.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
+    <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
+    <PackageReference Include="WaterTrans.GlyphLoader" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +56,41 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>English.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Engine\Render\Shaders\Framebuffer\fragmentShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Framebuffer\vertexShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\General\fragmentShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\General\vertexShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\LensBlur\fragmentShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\LensBlur\vertexShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Relement\fragmentShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Relement\vertexShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\ReToonRigid\fragmentShader.glsl" />
+    <EmbeddedResource Include="Engine\Render\Shaders\ReToonRigid\vertexShader.glsl" />
+    <None Remove="Engine\Render\Shaders\General\fragmentShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\General\fragmentShader.spv" />
+    <None Remove="Engine\Render\Shaders\Relement\vertexShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Relement\vertexShader.spv" />
+    <None Remove="Engine\Render\Shaders\ReToonRigid\fragmentShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\ReToonRigid\fragmentShader.spv" />
+    <None Remove="Engine\Render\Shaders\ReToonRigid\vertexShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\ReToonRigid\vertexShader.spv" />
+    <None Remove="Engine\Render\Shaders\Relement\fragmentShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Relement\fragmentShader.spv" />
+    <None Remove="Engine\Render\Shaders\General\vertexShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\General\vertexShader.spv" />
+    <None Remove="Engine\Render\Shaders\Framebuffer\vertexShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Framebuffer\vertexShader.spv" />
+    <None Remove="Engine\Render\Shaders\Framebuffer\fragmentShader.spv" />
+    <EmbeddedResource Include="Engine\Render\Shaders\Framebuffer\fragmentShader.spv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\eP Library\eP Library.csproj" />
+    <ProjectReference Include="..\KartCity.Common\KartCity.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Text\" />
   </ItemGroup>
 
 </Project>
