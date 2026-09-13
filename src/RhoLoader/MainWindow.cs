@@ -289,7 +289,8 @@ namespace RhoLoader
                     }
                     catch (Exception ex)
                     {
-                        _openMode = OpenMode.None;
+                        // Do not reset _openMode here: other files may have opened
+                        // successfully. _openMode describes the UI mode as a whole.
                         MessageBox.Show($"Rho archive open failed: {ex.Message}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
@@ -727,7 +728,7 @@ namespace RhoLoader
             if (droppedFiles == null || droppedFiles.Length == 0)
                 return;
 
-            bool hasOpenedArchive = _openMode != OpenMode.None;
+            bool hasOpenedArchive = BaseFolderManager.Initizated;
             bool allAreArchives = droppedFiles.Length > 0 && droppedFiles.All(f =>
                 Path.GetExtension(f).Equals(".rho", StringComparison.OrdinalIgnoreCase) ||
                 Path.GetExtension(f).Equals(".nho", StringComparison.OrdinalIgnoreCase));
@@ -989,22 +990,46 @@ namespace RhoLoader
 
         private RhoFolder? ResolveRhoFolder(PackFolderInfo targetFolder)
         {
-            // In single-file mode there's exactly one underlying Rho archive;
-            // the UI tree's root PackFolderInfo maps to the archive's root folder.
-            if (_openMode != OpenMode.SingleFile || _openedArchives.Count == 0)
+            if (_openedArchives.Count == 0)
                 return null;
-            OpenedArchive openedArchive = _openedArchives[0];
-            RhoFolder rootFolder = openedArchive.Archive.RootFolder;
-            string rootFullName = _root_folder?.FullName ?? "";
             string targetFullName = targetFolder.FullName ?? "";
 
-            if (targetFullName == rootFullName)
+            // Match the target folder to one of the opened archives. Each opened
+            // archive corresponds to a top-level PackFolderInfo whose FullName is
+            // the rho file name (e.g. "aaa.rho").
+            OpenedArchive? matchedArchive = null;
+            string archiveRootName = "";
+
+            if (_openMode == OpenMode.MultipleFiles)
+            {
+                foreach (OpenedArchive oa in _openedArchives)
+                {
+                    string rootName = Path.GetFileName(oa.FilePath);
+                    if (targetFullName == rootName || targetFullName.StartsWith(rootName + "/"))
+                    {
+                        matchedArchive = oa;
+                        archiveRootName = rootName;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                matchedArchive = _openedArchives[0];
+                archiveRootName = Path.GetFileName(_openedArchives[0].FilePath);
+            }
+
+            if (matchedArchive is null)
+                return null;
+
+            RhoFolder rootFolder = matchedArchive.Archive.RootFolder;
+            if (targetFullName == archiveRootName)
                 return rootFolder;
 
             string relativePath;
-            if (targetFullName.StartsWith(rootFullName + "/"))
-                relativePath = targetFullName.Substring(rootFullName.Length + 1);
-            else if (rootFullName == "")
+            if (targetFullName.StartsWith(archiveRootName + "/"))
+                relativePath = targetFullName.Substring(archiveRootName.Length + 1);
+            else if (archiveRootName == "")
                 relativePath = targetFullName;
             else
                 return null;
