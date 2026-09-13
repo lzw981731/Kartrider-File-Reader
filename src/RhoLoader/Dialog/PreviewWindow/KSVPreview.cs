@@ -76,7 +76,7 @@ namespace RhoLoader.PreviewWindow
         {
             if (LocaleData is null)
                 return track_name;
-            BinaryXmlTag? found_tag = LocaleData.Children.Find(x=>x.GetAttribute("id") == track_name);
+            BinaryXmlTag? found_tag = LocaleData.Children.FirstOrDefault(x => x.GetAttribute("id") == track_name);
             if(found_tag is not null)
                 return found_tag.GetAttribute("name");
             else
