@@ -21,6 +21,10 @@
       "Value": "开启Data文件夾"
     },
     {
+      "Name": "menu_save",
+      "Value": "保存"
+    },
+    {
       "Name": "menu_exit",
       "Value": "离开"
     },
@@ -171,6 +175,10 @@
     {
       "Name": "msg_drag_skipped",
       "Value": "跳过 {0} 个文件（名称已存在）。"
+    },
+    {
+      "Name": "msg_save_done",
+      "Value": "保存成功。"
     }
   ]
 }

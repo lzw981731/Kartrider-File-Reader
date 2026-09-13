@@ -129,7 +129,9 @@ namespace RhoLoader
             // 
             menuToolStripMenuItem.Name = "menuToolStripMenuItem";
             menuToolStripMenuItem.Size = new Size(170, 22);
+            menuToolStripMenuItem.Tag = "menu_save";
             menuToolStripMenuItem.Text = "menu_save";
+            menuToolStripMenuItem.Click += action_save;
             // 
             // toolStripSeparator1
             // 

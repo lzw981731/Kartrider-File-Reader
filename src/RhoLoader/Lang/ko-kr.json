@@ -21,6 +21,10 @@
       "Value": "폴더 열기"
     },
     {
+      "Name": "menu_save",
+      "Value": "저장"
+    },
+    {
       "Name": "menu_exit",
       "Value": "나가기"
     },
@@ -171,6 +175,10 @@
     {
       "Name": "msg_drag_skipped",
       "Value": "{0}개 파일 건너뜀 (이름이 이미 존재함)."
+    },
+    {
+      "Name": "msg_save_done",
+      "Value": "저장되었습니다."
     }
   ]
 }

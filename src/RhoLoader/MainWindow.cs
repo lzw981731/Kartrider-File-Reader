@@ -34,6 +34,24 @@ namespace RhoLoader
 
         private PackFolderInfo _cur_folder;
 
+        private enum OpenMode
+        {
+            None,
+            SingleFile,
+            MultipleFiles,
+            DataFolder
+        }
+
+        private OpenMode _openMode = OpenMode.None;
+
+        private class OpenedArchive
+        {
+            public string FilePath;
+            public RhoArchive Archive;
+        }
+
+        private List<OpenedArchive> _openedArchives = new List<OpenedArchive>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -60,6 +78,7 @@ namespace RhoLoader
             this.menu_file_openFiles.Text = ((string)this.menu_file_openFiles.Tag).GetStringBag();
             this.menu_file_openFolder.Text = ((string)this.menu_file_openFolder.Tag).GetStringBag();
             this.menu_file_exit.Text = ((string)this.menu_file_exit.Tag).GetStringBag();
+            this.menuToolStripMenuItem.Text = ((string)this.menuToolStripMenuItem.Tag).GetStringBag();
             this.menu_extract.Text = ((string)this.menu_extract.Tag).GetStringBag();
             this.menu_extract_all.Text = ((string)this.menu_extract_all.Tag).GetStringBag();
             this.menu_extract_current.Text = ((string)this.menu_extract_current.Tag).GetStringBag();
@@ -149,6 +168,8 @@ namespace RhoLoader
                 {
                     CloseCurrentFile();
                     BaseFolderManager.OpenDataFolder($"{fbd.SelectedPath}\\aaa.pk");
+                    _openMode = OpenMode.DataFolder;
+                    _openedArchives.Clear();
                     Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
                     Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
                     PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
@@ -192,6 +213,24 @@ namespace RhoLoader
             {
                 CloseCurrentFile();
                 BaseFolderManager.OpenSingleFile(dialog_singleFile.FileName);
+                // Open the underlying Rho archive (editable) for single-file mode
+                _openMode = OpenMode.SingleFile;
+                _openedArchives.Clear();
+                try
+                {
+                    RhoArchive rhoArchive = new RhoArchive();
+                    rhoArchive.Open(dialog_singleFile.FileName);
+                    _openedArchives.Add(new OpenedArchive()
+                    {
+                        FilePath = dialog_singleFile.FileName,
+                        Archive = rhoArchive
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _openMode = OpenMode.None;
+                    MessageBox.Show($"Rho archive open failed: {ex.Message}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
                 Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
                 PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
@@ -234,6 +273,26 @@ namespace RhoLoader
             {
                 CloseCurrentFile();
                 BaseFolderManager.OpenMultipleFiles(dialog_multiFile.FileNames);
+                _openMode = OpenMode.MultipleFiles;
+                _openedArchives.Clear();
+                foreach (string rhoPath in dialog_multiFile.FileNames)
+                {
+                    try
+                    {
+                        RhoArchive rhoArchive = new RhoArchive();
+                        rhoArchive.Open(rhoPath);
+                        _openedArchives.Add(new OpenedArchive()
+                        {
+                            FilePath = rhoPath,
+                            Archive = rhoArchive
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _openMode = OpenMode.None;
+                        MessageBox.Show($"Rho archive open failed: {ex.Message}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
                 Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
                 Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
                 PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
@@ -277,6 +336,123 @@ namespace RhoLoader
         private void action_exit(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+        private void action_save(object sender, EventArgs e)
+        {
+            if (_openedArchives.Count == 0)
+            {
+                MessageBox.Show(
+                    "msg_open_plz".GetStringBag(),
+                    "msg_level_error".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+            try
+            {
+                foreach (OpenedArchive openedArchive in _openedArchives)
+                {
+                    openedArchive.Archive.SaveTo(openedArchive.FilePath);
+                }
+                // Reload the current file so the UI reflects the saved content
+                string[] savedPaths = _openedArchives.Select(x => x.FilePath).ToArray();
+                bool wasSingle = _openMode == OpenMode.SingleFile;
+                CloseCurrentFile();
+                if (wasSingle && savedPaths.Length > 0)
+                {
+                    action_open_saved(savedPaths[0]);
+                }
+                else if (savedPaths.Length > 0)
+                {
+                    action_open_saved_multiple(savedPaths);
+                }
+                MessageBox.Show(
+                    "msg_save_done".GetStringBag(),
+                    "msg_level_info".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Save failed: {ex.Message}",
+                    "msg_level_error".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void action_open_saved(string rhoPath)
+        {
+            BaseFolderManager.OpenSingleFile(rhoPath);
+            _openMode = OpenMode.SingleFile;
+            _openedArchives.Clear();
+            RhoArchive rhoArchive = new RhoArchive();
+            rhoArchive.Open(rhoPath);
+            _openedArchives.Add(new OpenedArchive()
+            {
+                FilePath = rhoPath,
+                Archive = rhoArchive
+            });
+            RebuildExplorerTreeFromRoot();
+        }
+
+        private void action_open_saved_multiple(string[] rhoPaths)
+        {
+            BaseFolderManager.OpenMultipleFiles(rhoPaths);
+            _openMode = OpenMode.MultipleFiles;
+            _openedArchives.Clear();
+            foreach (string rhoPath in rhoPaths)
+            {
+                RhoArchive rhoArchive = new RhoArchive();
+                rhoArchive.Open(rhoPath);
+                _openedArchives.Add(new OpenedArchive()
+                {
+                    FilePath = rhoPath,
+                    Archive = rhoArchive
+                });
+            }
+            RebuildExplorerTreeFromRoot();
+        }
+
+        private void RebuildExplorerTreeFromRoot()
+        {
+            treeview_explorer.Nodes.Clear();
+            Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
+            Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
+            PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
+            foreach (PackFolderInfo folder in rootFolders)
+            {
+                folderQueue.Enqueue(folder);
+                TreeNode rootNode = new TreeNode()
+                {
+                    Text = folder.FolderName,
+                    Tag = new NodeInfoContainer(NodeType.Folder, folder)
+                };
+                nodeQueue.Enqueue(rootNode);
+                treeview_explorer.Nodes.Add(rootNode);
+            }
+            while (folderQueue.Count > 0 && nodeQueue.Count > 0)
+            {
+                TreeNode node = nodeQueue.Dequeue();
+                PackFolderInfo packFolderInfo = folderQueue.Dequeue();
+                foreach (PackFolderInfo folder in packFolderInfo.GetFoldersInfo())
+                {
+                    TreeNode subnode = new TreeNode()
+                    {
+                        Text = folder.FolderName,
+                        Tag = new NodeInfoContainer(NodeType.Folder, folder)
+                    };
+                    node.Nodes.Add(subnode);
+                    folderQueue.Enqueue(folder);
+                    nodeQueue.Enqueue(subnode);
+                }
+            }
+            if (rootFolders.Length > 0)
+                _cur_folder = _root_folder = rootFolders[0];
+            else
+                _cur_folder = _root_folder = BaseFolderManager.GetRootFolder();
+            UpdateUIFolder();
         }
         private void action_listview_click(object sender, MouseEventArgs e)
         {
@@ -598,6 +774,8 @@ namespace RhoLoader
                         OriginalFile = droppedPath
                     };
                     targetFolder.Files.Add(newFileInfo);
+                    // Write the dropped file into the underlying Rho archive structure
+                    AddFileToArchive(targetFolder, droppedPath, fileName);
                     addedCount++;
                 }
                 else if (Directory.Exists(droppedPath))
@@ -741,6 +919,7 @@ namespace RhoLoader
                     OriginalFile = fi.FullName
                 };
                 targetFolder.Files.Add(fileInfo);
+                AddFileToArchive(targetFolder, fi.FullName, fi.Name);
             }
             foreach (DirectoryInfo subDi in di.GetDirectories())
             {
@@ -752,7 +931,59 @@ namespace RhoLoader
                 };
                 AddDirectoryContents(subFolder, subDi.FullName);
                 targetFolder.Folders.Add(subFolder);
+                AddFolderToArchive(targetFolder, subDi.Name);
             }
+        }
+
+        private void AddFileToArchive(PackFolderInfo targetFolder, string filePath, string fileName)
+        {
+            RhoFolder? rhoFolder = ResolveRhoFolder(targetFolder);
+            if (rhoFolder is null)
+                return;
+            if (rhoFolder.ContainsFile(fileName))
+                return;
+            RhoFile newRhoFile = new RhoFile();
+            newRhoFile.Name = fileName;
+            newRhoFile.DataSource = new FileDataSource(filePath);
+            newRhoFile.FileEncryptionProperty = RhoFileProperty.CompressedEncrypted;
+            rhoFolder.AddFile(newRhoFile);
+        }
+
+        private void AddFolderToArchive(PackFolderInfo targetFolder, string folderName)
+        {
+            RhoFolder? rhoFolder = ResolveRhoFolder(targetFolder);
+            if (rhoFolder is null)
+                return;
+            if (rhoFolder.ContainsFolder(folderName))
+                return;
+            RhoFolder newRhoFolder = new RhoFolder();
+            newRhoFolder.Name = folderName;
+            rhoFolder.AddFolder(newRhoFolder);
+        }
+
+        private RhoFolder? ResolveRhoFolder(PackFolderInfo targetFolder)
+        {
+            // In single-file mode there's exactly one underlying Rho archive;
+            // the UI tree's root PackFolderInfo maps to the archive's root folder.
+            if (_openMode != OpenMode.SingleFile || _openedArchives.Count == 0)
+                return null;
+            OpenedArchive openedArchive = _openedArchives[0];
+            RhoFolder rootFolder = openedArchive.Archive.RootFolder;
+            string rootFullName = _root_folder?.FullName ?? "";
+            string targetFullName = targetFolder.FullName ?? "";
+
+            if (targetFullName == rootFullName)
+                return rootFolder;
+
+            string relativePath;
+            if (targetFullName.StartsWith(rootFullName + "/"))
+                relativePath = targetFullName.Substring(rootFullName.Length + 1);
+            else if (rootFullName == "")
+                relativePath = targetFullName;
+            else
+                return null;
+
+            return rootFolder.GetFolder(relativePath);
         }
 
         #endregion
@@ -801,6 +1032,12 @@ namespace RhoLoader
             treeview_explorer.Nodes.Clear();
             listview_main.Items.Clear();
             BaseFolderManager.Reset();
+            foreach (OpenedArchive openedArchive in _openedArchives)
+            {
+                openedArchive.Archive.Dispose();
+            }
+            _openedArchives.Clear();
+            _openMode = OpenMode.None;
         }
         private string FormatDataLength(int length)
         {

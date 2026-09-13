@@ -21,6 +21,10 @@
       "Value": "開啟整個Data資料夾"
     },
     {
+      "Name": "menu_save",
+      "Value": "儲存"
+    },
+    {
       "Name": "menu_exit",
       "Value": "離開"
     },
@@ -197,6 +201,10 @@
     {
       "Name": "msg_drag_skipped",
       "Value": "跳過 {0} 個檔案（名稱已存在）。"
+    },
+    {
+      "Name": "msg_save_done",
+      "Value": "儲存成功。"
     }
   ]
 }

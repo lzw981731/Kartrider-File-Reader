@@ -25,6 +25,10 @@
       "Value": "Open Data Folder"
     },
     {
+      "Name": "menu_save",
+      "Value": "Save"
+    },
+    {
       "Name": "menu_exit",
       "Value": "Exit"
     },
@@ -205,6 +209,10 @@
     {
       "Name": "msg_drag_skipped",
       "Value": "{0} file(s) skipped (name already exists)."
+    },
+    {
+      "Name": "msg_save_done",
+      "Value": "Saved successfully."
     }
   ]
 }
