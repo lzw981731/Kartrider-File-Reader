@@ -22,17 +22,13 @@ jobs:
       - name: Restore
         run: dotnet restore src/RhoLoader/RhoLoader.csproj
 
-      - name: Build RhoLoader (Release x86)
-        run: dotnet build src/RhoLoader/RhoLoader.csproj -c Release -p:Platform=x86 --no-restore
-
-      - name: Build KartLibrary (Release AnyCPU)
-        run: dotnet build src/KartriderLibrary/KartLibrary.csproj -c Release --no-restore
+      - name: Build RhoLoader (Release AnyCPU)
+        run: dotnet build src/RhoLoader/RhoLoader.csproj -c Release --no-restore
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: RhoLoader-build
           path: |
-            src/RhoLoader/bin/Release/net8.0-windows7.0/win-x86/
             src/RhoLoader/bin/Release/
           retention-days: 14

@@ -35,6 +35,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="RhoLoader" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Globalization\LocalizedString\English.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
