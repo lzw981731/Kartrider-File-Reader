@@ -218,6 +218,8 @@ namespace RhoLoader
             listview_main.View = View.Details;
             listview_main.MouseClick += action_listview_click;
             listview_main.MouseDoubleClick += action_listview_doubleclick;
+            listview_main.DragDrop += action_drag_drop;
+            listview_main.DragEnter += action_drag_enter;
             // 
             // columnHeader1
             // 
@@ -293,6 +295,7 @@ namespace RhoLoader
             // 
             // treeview_explorer
             // 
+            treeview_explorer.AllowDrop = true;
             treeview_explorer.Dock = DockStyle.Fill;
             treeview_explorer.DrawMode = TreeViewDrawMode.OwnerDrawAll;
             treeview_explorer.FullRowSelect = true;
@@ -304,6 +307,8 @@ namespace RhoLoader
             treeview_explorer.TabIndex = 0;
             treeview_explorer.Tag = "treeview_explorer";
             treeview_explorer.AfterSelect += action_node_select;
+            treeview_explorer.DragDrop += action_drag_drop;
+            treeview_explorer.DragEnter += action_drag_enter;
             // 
             // split_main
             // 

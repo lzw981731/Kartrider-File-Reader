@@ -551,7 +551,9 @@ namespace RhoLoader
             if (droppedFiles == null || droppedFiles.Length == 0)
                 return;
 
-            if (_cur_folder == null)
+            // Determine target folder: treeview node under cursor, or current folder
+            PackFolderInfo targetFolder = ResolveDropTargetFolder(sender, e);
+            if (targetFolder == null)
             {
                 MessageBox.Show(
                     "msg_open_plz".GetStringBag(),
@@ -570,9 +572,9 @@ namespace RhoLoader
                 {
                     string fileName = Path.GetFileName(droppedPath);
 
-                    // Check if file with same name already exists in current folder
+                    // Check if file with same name already exists in target folder
                     bool exists = false;
-                    foreach (PackFileInfo existingFile in _cur_folder.GetFilesInfo())
+                    foreach (PackFileInfo existingFile in targetFolder.GetFilesInfo())
                     {
                         if (existingFile.FileName == fileName)
                         {
@@ -590,19 +592,19 @@ namespace RhoLoader
                     PackFileInfo newFileInfo = new PackFileInfo()
                     {
                         FileName = fileName,
-                        FullName = _cur_folder.FullName == "" ? fileName : $"{_cur_folder.FullName}/{fileName}",
+                        FullName = targetFolder.FullName == "" ? fileName : $"{targetFolder.FullName}/{fileName}",
                         FileSize = (int)fi.Length,
                         PackFileType = PackFileType.ExternalFile,
                         OriginalFile = droppedPath
                     };
-                    _cur_folder.Files.Add(newFileInfo);
+                    targetFolder.Files.Add(newFileInfo);
                     addedCount++;
                 }
                 else if (Directory.Exists(droppedPath))
                 {
                     string folderName = Path.GetFileName(droppedPath);
                     bool exists = false;
-                    foreach (PackFolderInfo existingFolder in _cur_folder.GetFoldersInfo())
+                    foreach (PackFolderInfo existingFolder in targetFolder.GetFoldersInfo())
                     {
                         if (existingFolder.FolderName == folderName)
                         {
@@ -619,20 +621,25 @@ namespace RhoLoader
                     PackFolderInfo newFolder = new PackFolderInfo()
                     {
                         FolderName = folderName,
-                        FullName = _cur_folder.FullName == "" ? folderName : $"{_cur_folder.FullName}/{folderName}",
-                        ParentFolder = _cur_folder
+                        FullName = targetFolder.FullName == "" ? folderName : $"{targetFolder.FullName}/{folderName}",
+                        ParentFolder = targetFolder
                     };
 
                     // Recursively add files from dropped directory
                     AddDirectoryContents(newFolder, droppedPath);
-                    _cur_folder.Folders.Add(newFolder);
+                    targetFolder.Folders.Add(newFolder);
                     addedCount++;
                 }
             }
 
             if (addedCount > 0)
             {
-                UpdateUIFolder();
+                // If files were dropped onto a treeview node, rebuild the tree so new folders appear;
+                // otherwise just refresh the current list view.
+                if (sender is DarkTreeView)
+                    RebuildExplorerTree(targetFolder);
+                else
+                    UpdateUIFolder();
             }
 
             if (skippedCount > 0)
@@ -643,6 +650,81 @@ namespace RhoLoader
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
             }
+        }
+
+        private PackFolderInfo? ResolveDropTargetFolder(object sender, DragEventArgs e)
+        {
+            if (sender is DarkTreeView)
+            {
+                TreeNode? hitNode = treeview_explorer.GetNodeAt(e.X, e.Y);
+                if (hitNode is null)
+                    hitNode = treeview_explorer.GetNodeAt(treeview_explorer.PointToClient(new Point(e.X, e.Y)));
+                if (hitNode?.Tag is NodeInfoContainer nodeInfo && nodeInfo.BaseData is PackFolderInfo folderInfo)
+                    return folderInfo;
+                return null;
+            }
+            return _cur_folder;
+        }
+
+        private void RebuildExplorerTree(PackFolderInfo selectedFolder)
+        {
+            treeview_explorer.Nodes.Clear();
+            Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
+            Queue<TreeNode> nodeQueue = new Queue<TreeNode>();
+            PackFolderInfo[] rootFolders = BaseFolderManager.GetDirectories("");
+            foreach (PackFolderInfo folder in rootFolders)
+            {
+                folderQueue.Enqueue(folder);
+                TreeNode rootNode = new TreeNode()
+                {
+                    Text = folder.FolderName,
+                    Tag = new NodeInfoContainer(NodeType.Folder, folder)
+                };
+                nodeQueue.Enqueue(rootNode);
+                treeview_explorer.Nodes.Add(rootNode);
+            }
+            while (folderQueue.Count > 0 && nodeQueue.Count > 0)
+            {
+                TreeNode node = nodeQueue.Dequeue();
+                PackFolderInfo packFolderInfo = folderQueue.Dequeue();
+                foreach (PackFolderInfo folder in packFolderInfo.GetFoldersInfo())
+                {
+                    TreeNode subnode = new TreeNode()
+                    {
+                        Text = folder.FolderName,
+                        Tag = new NodeInfoContainer(NodeType.Folder, folder)
+                    };
+                    node.Nodes.Add(subnode);
+                    folderQueue.Enqueue(folder);
+                    nodeQueue.Enqueue(subnode);
+                }
+            }
+            // Navigate to the folder the user dropped onto
+            if (selectedFolder is not null)
+            {
+                _cur_folder = selectedFolder;
+                SelectTreeNode(treeview_explorer.Nodes, selectedFolder);
+                UpdateUIFolder();
+            }
+        }
+
+        private bool SelectTreeNode(TreeNodeCollection nodes, PackFolderInfo targetFolder)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Tag is NodeInfoContainer nodeInfo && nodeInfo.BaseData is PackFolderInfo folderInfo)
+                {
+                    if (folderInfo.FullName == targetFolder.FullName)
+                    {
+                        treeview_explorer.SelectedNode = node;
+                        node.Expand();
+                        return true;
+                    }
+                }
+                if (SelectTreeNode(node.Nodes, targetFolder))
+                    return true;
+            }
+            return false;
         }
 
         private void AddDirectoryContents(PackFolderInfo targetFolder, string directoryPath)
