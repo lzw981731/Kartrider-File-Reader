@@ -727,6 +727,31 @@ namespace RhoLoader
             if (droppedFiles == null || droppedFiles.Length == 0)
                 return;
 
+            bool hasOpenedArchive = _openMode != OpenMode.None;
+            bool allAreArchives = droppedFiles.Length > 0 && droppedFiles.All(f =>
+                Path.GetExtension(f).Equals(".rho", StringComparison.OrdinalIgnoreCase) ||
+                Path.GetExtension(f).Equals(".nho", StringComparison.OrdinalIgnoreCase));
+
+            // Dragging .rho/.nho file(s) means "open this archive"
+            if (allAreArchives)
+            {
+                if (droppedFiles.Length == 1)
+                    action_open_saved(droppedFiles[0]);
+                else
+                    action_open_saved_multiple(droppedFiles);
+                return;
+            }
+
+            if (!hasOpenedArchive)
+            {
+                MessageBox.Show(
+                    "msg_open_plz".GetStringBag(),
+                    "msg_level_error".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
             // Determine target folder: treeview node under cursor, or current folder
             PackFolderInfo targetFolder = ResolveDropTargetFolder(sender, e);
             if (targetFolder == null)
