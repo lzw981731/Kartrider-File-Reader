@@ -193,6 +193,10 @@
     {
       "Name": "region_taiwan",
       "Value": "臺灣"
+    },
+    {
+      "Name": "msg_drag_skipped",
+      "Value": "跳過 {0} 個檔案（名稱已存在）。"
     }
   ]
 }

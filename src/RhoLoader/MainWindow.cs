@@ -528,6 +528,151 @@ namespace RhoLoader
                 }
             }
         }
+        private void action_drag_enter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files != null && files.Length > 0)
+                {
+                    e.Effect = DragDropEffects.Copy;
+                    return;
+                }
+            }
+            e.Effect = DragDropEffects.None;
+        }
+
+        private void action_drag_drop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+                return;
+
+            string[] droppedFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (droppedFiles == null || droppedFiles.Length == 0)
+                return;
+
+            if (_cur_folder == null)
+            {
+                MessageBox.Show(
+                    "msg_open_plz".GetStringBag(),
+                    "msg_level_error".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            int addedCount = 0;
+            int skippedCount = 0;
+
+            foreach (string droppedPath in droppedFiles)
+            {
+                if (System.IO.File.Exists(droppedPath))
+                {
+                    string fileName = Path.GetFileName(droppedPath);
+
+                    // Check if file with same name already exists in current folder
+                    bool exists = false;
+                    foreach (PackFileInfo existingFile in _cur_folder.GetFilesInfo())
+                    {
+                        if (existingFile.FileName == fileName)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (exists)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    FileInfo fi = new FileInfo(droppedPath);
+                    PackFileInfo newFileInfo = new PackFileInfo()
+                    {
+                        FileName = fileName,
+                        FullName = _cur_folder.FullName == "" ? fileName : $"{_cur_folder.FullName}/{fileName}",
+                        FileSize = (int)fi.Length,
+                        PackFileType = PackFileType.ExternalFile,
+                        OriginalFile = droppedPath
+                    };
+                    _cur_folder.Files.Add(newFileInfo);
+                    addedCount++;
+                }
+                else if (Directory.Exists(droppedPath))
+                {
+                    string folderName = Path.GetFileName(droppedPath);
+                    bool exists = false;
+                    foreach (PackFolderInfo existingFolder in _cur_folder.GetFoldersInfo())
+                    {
+                        if (existingFolder.FolderName == folderName)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (exists)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    PackFolderInfo newFolder = new PackFolderInfo()
+                    {
+                        FolderName = folderName,
+                        FullName = _cur_folder.FullName == "" ? folderName : $"{_cur_folder.FullName}/{folderName}",
+                        ParentFolder = _cur_folder
+                    };
+
+                    // Recursively add files from dropped directory
+                    AddDirectoryContents(newFolder, droppedPath);
+                    _cur_folder.Folders.Add(newFolder);
+                    addedCount++;
+                }
+            }
+
+            if (addedCount > 0)
+            {
+                UpdateUIFolder();
+            }
+
+            if (skippedCount > 0)
+            {
+                MessageBox.Show(
+                    string.Format("msg_drag_skipped".GetStringBag(), skippedCount),
+                    "msg_level_warning".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+
+        private void AddDirectoryContents(PackFolderInfo targetFolder, string directoryPath)
+        {
+            DirectoryInfo di = new DirectoryInfo(directoryPath);
+            foreach (FileInfo fi in di.GetFiles())
+            {
+                PackFileInfo fileInfo = new PackFileInfo()
+                {
+                    FileName = fi.Name,
+                    FullName = targetFolder.FullName == "" ? fi.Name : $"{targetFolder.FullName}/{fi.Name}",
+                    FileSize = (int)fi.Length,
+                    PackFileType = PackFileType.ExternalFile,
+                    OriginalFile = fi.FullName
+                };
+                targetFolder.Files.Add(fileInfo);
+            }
+            foreach (DirectoryInfo subDi in di.GetDirectories())
+            {
+                PackFolderInfo subFolder = new PackFolderInfo()
+                {
+                    FolderName = subDi.Name,
+                    FullName = targetFolder.FullName == "" ? subDi.Name : $"{targetFolder.FullName}/{subDi.Name}",
+                    ParentFolder = targetFolder
+                };
+                AddDirectoryContents(subFolder, subDi.FullName);
+                targetFolder.Folders.Add(subFolder);
+            }
+        }
+
         #endregion
         #region Other Function
         private string GetCurrentPath()

@@ -167,6 +167,10 @@
     {
       "Name": "msg_level_question",
       "Value": "Question"
+    },
+    {
+      "Name": "msg_drag_skipped",
+      "Value": "跳过 {0} 个文件（名称已存在）。"
     }
   ]
 }

@@ -201,6 +201,10 @@
     {
       "Name": "msg_saveRhoWithoutAAA",
       "Value":  "Do you want to save this Rho file without writing new information of this file into \"aaa.pk\"?"
+    },
+    {
+      "Name": "msg_drag_skipped",
+      "Value": "{0} file(s) skipped (name already exists)."
     }
   ]
 }

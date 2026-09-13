@@ -360,9 +360,10 @@ namespace RhoLoader
             icon_back.TabStop = false;
             icon_back.EnabledChanged += action_icon_enable_changed;
             icon_back.Click += action_back;
-            // 
+            //
             // MainWindow
-            // 
+            //
+            AllowDrop = true;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
@@ -375,6 +376,8 @@ namespace RhoLoader
             Name = "MainWindow";
             Tag = "title";
             Text = "title";
+            DragDrop += action_drag_drop;
+            DragEnter += action_drag_enter;
             menu.ResumeLayout(false);
             menu.PerformLayout();
             contextMenu_list.ResumeLayout(false);

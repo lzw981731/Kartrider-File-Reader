@@ -167,6 +167,10 @@
     {
       "Name": "msg_level_question",
       "Value": "Question"
+    },
+    {
+      "Name": "msg_drag_skipped",
+      "Value": "{0}개 파일 건너뜀 (이름이 이미 존재함)."
     }
   ]
 }

@@ -542,6 +542,10 @@ namespace KartLibrary.File
             {
                 return file5Info.GetData();
             }
+            else if (PackFileType == PackFileType.ExternalFile && OriginalFile is string filePath)
+            {
+                return System.IO.File.ReadAllBytes(filePath);
+            }
             else
                 return null;
         }
@@ -590,6 +594,7 @@ namespace KartLibrary.File
     public enum PackFileType
     {
         RhoFile,
-        Rho5File
+        Rho5File,
+        ExternalFile
     }
 }
