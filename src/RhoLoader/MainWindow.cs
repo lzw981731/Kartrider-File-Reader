@@ -839,7 +839,8 @@ namespace RhoLoader
                     hitNode = treeview_explorer.GetNodeAt(treeview_explorer.PointToClient(new Point(e.X, e.Y)));
                 if (hitNode?.Tag is NodeInfoContainer nodeInfo && nodeInfo.BaseData is PackFolderInfo folderInfo)
                     return folderInfo;
-                return null;
+                // Dropped on treeview empty area: fall back to the current folder
+                return _cur_folder;
             }
             return _cur_folder;
         }
