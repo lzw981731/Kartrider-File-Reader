@@ -1,0 +1,14 @@
+[package]
+name = "rho5-ffi"
+description = "C ABI bridge exposing P5136 RHO5 scan/extract/replace to RhoLoader (C#)"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+version = "1.0.0"
+
+[lib]
+name = "rho5ffi"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+p5136-rho5 = { path = "../p5136-rho5" }

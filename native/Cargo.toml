@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/p5136-rho5",
+    "crates/rho5-ffi",
+]
+
+[workspace.package]
+edition = "2024"
+license = "AFL-3.0"
+rust-version = "1.94"
+version = "1.0.0"
+
+[workspace.dependencies]
+base64 = "0.22"
+flate2 = "1.1"
+md-5 = "0.10"
+thiserror = "2.0"
+unicode-normalization = "0.1"
+tempfile = "3.23"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "allow"

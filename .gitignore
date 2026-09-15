@@ -1,0 +1,10 @@
+# Rust (native/rho5-ffi)
+native/target/
+**/target/
+Cargo.lock
+
+# .NET build output
+src/**/bin/
+src/**/obj/
+RhoLoader-build/
+*.zip

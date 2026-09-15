@@ -63,6 +63,28 @@ namespace RhoLoader
             listview_main.SmallImageList = imageList_listview;
             listview_main.SmallImageList.Images.Add("file", new Bitmap(global::RhoLoader.Properties.Resources.baseline_insert_drive_file_black_18dp));
             listview_main.SmallImageList.Images.Add("folder", new Bitmap(global::RhoLoader.Properties.Resources.folder_close));
+
+            // 动态挂载 RHO5(P5136) FFI 工具入口，避免改动 Designer 布局
+            ToolStripMenuItem menuRho5 = new ToolStripMenuItem("RHO5 Tool (P5136/Rust FFI)");
+            menuRho5.Click += (s, e) =>
+            {
+                try
+                {
+                    using (Rho5FfiWindow toolWindow = new Rho5FfiWindow())
+                    {
+                        toolWindow.ShowDialog(this);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "无法打开 RHO5 工具: " + ex.Message,
+                        "Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            };
+            menu_file.DropDownItems.Add(menuRho5);
         }
         public MainWindow(StartupOption startupOption) : this()
         {

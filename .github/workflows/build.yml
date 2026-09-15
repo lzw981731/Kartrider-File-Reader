@@ -19,11 +19,35 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Setup Rust (windows-msvc)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build rho5ffi (Rust cdylib DLL)
+        run: cargo build --release --manifest-path native/Cargo.toml
+
       - name: Restore
         run: dotnet restore src/RhoLoader/RhoLoader.csproj
 
       - name: Build RhoLoader (Release AnyCPU)
         run: dotnet build src/RhoLoader/RhoLoader.csproj -c Release --no-restore
+
+      - name: Copy rho5ffi.dll into RhoLoader output
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem -Recurse -Filter "rho5ffi.dll" native\target\release | Select-Object -First 1
+          if ($null -eq $dll) {
+            Write-Error "rho5ffi.dll not found after cargo build"
+            exit 1
+          }
+          $dest = Get-ChildItem -Recurse -Directory src\RhoLoader\bin\Release | Where-Object { $_.Name -like "net8.0-windows*" } | Select-Object -First 1
+          if ($null -eq $dest) {
+            Write-Error "RhoLoader output dir not found"
+            exit 1
+          }
+          Copy-Item $dll.FullName $dest.FullName -Force
+          Write-Output "Copied rho5ffi.dll -> $($dest.FullName)"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
