@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/p5136-rho5",
     "crates/rho5-ffi",
+    "crates/rho5-tool",
 ]
 
 [workspace.package]

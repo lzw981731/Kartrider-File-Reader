@@ -1,0 +1,14 @@
+[package]
+name = "rho5-tool"
+description = "CLI: list/extract/replace files inside P5136 RHO5 archives (uses p5136-rho5)"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+version = "1.0.0"
+
+[[bin]]
+name = "rho5tool"
+path = "src/main.rs"
+
+[dependencies]
+p5136-rho5 = { path = "../p5136-rho5" }

@@ -24,8 +24,20 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Build rho5ffi (Rust cdylib DLL)
+      - name: Build rho5ffi + rho5tool (Rust)
         run: cargo build --release --manifest-path native/Cargo.toml
+
+      - name: Copy rho5tool.exe to staging
+        shell: pwsh
+        run: |
+          $tool = Get-ChildItem -Recurse -Filter "rho5tool.exe" native\target\release | Select-Object -First 1
+          if ($null -eq $tool) {
+            Write-Error "rho5tool.exe not found after cargo build"
+            exit 1
+          }
+          New-Item -ItemType Directory -Force -Path native\staging | Out-Null
+          Copy-Item $tool.FullName native\staging\ -Force
+          Write-Output "Copied rho5tool.exe -> native\staging"
 
       - name: Restore
         run: dotnet restore src/RhoLoader/RhoLoader.csproj
@@ -55,4 +67,5 @@ jobs:
           name: RhoLoader-build
           path: |
             src/RhoLoader/bin/Release/
+            native/staging/
           retention-days: 14
