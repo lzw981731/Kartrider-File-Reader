@@ -24,7 +24,9 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Build rho5ffi + rho5tool (Rust)
+      - name: Build rho5ffi + rho5tool (Rust, static CRT)
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
         run: cargo build --release --manifest-path native/Cargo.toml
 
       - name: Copy rho5tool.exe to staging
