@@ -52,6 +52,9 @@ namespace RhoLoader
 
         private List<OpenedArchive> _openedArchives = new List<OpenedArchive>();
 
+        // P5136/Rust RHO5 写入：Data 模式下的 Data 根目录（含 DataPack*.rho5）
+        private string? _dataFolderPath = null;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -63,28 +66,6 @@ namespace RhoLoader
             listview_main.SmallImageList = imageList_listview;
             listview_main.SmallImageList.Images.Add("file", new Bitmap(global::RhoLoader.Properties.Resources.baseline_insert_drive_file_black_18dp));
             listview_main.SmallImageList.Images.Add("folder", new Bitmap(global::RhoLoader.Properties.Resources.folder_close));
-
-            // 动态挂载 RHO5(P5136) FFI 工具入口，避免改动 Designer 布局
-            ToolStripMenuItem menuRho5 = new ToolStripMenuItem("RHO5 Tool (P5136/Rust FFI)");
-            menuRho5.Click += (s, e) =>
-            {
-                try
-                {
-                    using (Rho5FfiWindow toolWindow = new Rho5FfiWindow())
-                    {
-                        toolWindow.ShowDialog(this);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        "无法打开 RHO5 工具: " + ex.Message,
-                        "Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-                }
-            };
-            menu_file.DropDownItems.Add(menuRho5);
         }
         public MainWindow(StartupOption startupOption) : this()
         {
@@ -189,6 +170,7 @@ namespace RhoLoader
                 else
                 {
                     CloseCurrentFile();
+                    _dataFolderPath = fbd.SelectedPath;
                     BaseFolderManager.OpenDataFolder($"{fbd.SelectedPath}\\aaa.pk");
                     _openMode = OpenMode.DataFolder;
                     _openedArchives.Clear();
@@ -362,6 +344,12 @@ namespace RhoLoader
         }
         private void action_save(object sender, EventArgs e)
         {
+            // Data 文件夹模式：通过 P5136/Rust (rho5ffi.dll) 将拖入的外部文件写回 rho5 归档
+            if (_openMode == OpenMode.DataFolder && !string.IsNullOrEmpty(_dataFolderPath))
+            {
+                SaveDataFolderViaFfi();
+                return;
+            }
             if (_openedArchives.Count == 0)
             {
                 MessageBox.Show(
@@ -400,6 +388,74 @@ namespace RhoLoader
                 MessageBox.Show(
                     $"Save failed: {ex.Message}",
                     "msg_level_error".GetStringBag(),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Data 文件夹模式保存：遍历文件夹树中用户拖入的外部文件（ExternalFile），
+        /// 通过 rho5ffi.dll（P5136_Rust 的 Rho5Writer）写回对应 rho5 归档。
+        /// </summary>
+        private void SaveDataFolderViaFfi()
+        {
+            // 收集所有外部拖入文件（FullName = rho5 内部路径，如 etc_/itemTable@kr.xml）
+            List<(string path, string sourceFile)> pending = new List<(string, string)>();
+            Queue<PackFolderInfo> folderQueue = new Queue<PackFolderInfo>();
+            PackFolderInfo[] roots = BaseFolderManager.GetDirectories("");
+            foreach (PackFolderInfo root in roots)
+                folderQueue.Enqueue(root);
+            while (folderQueue.Count > 0)
+            {
+                PackFolderInfo folder = folderQueue.Dequeue();
+                foreach (PackFolderInfo sub in folder.GetFoldersInfo())
+                    folderQueue.Enqueue(sub);
+                foreach (PackFileInfo file in folder.GetFilesInfo())
+                {
+                    if (file.PackFileType == PackFileType.ExternalFile && file.OriginalFile is string src)
+                    {
+                        pending.Add((file.FullName, src));
+                    }
+                }
+            }
+
+            if (pending.Count == 0)
+            {
+                MessageBox.Show(
+                    "没有需要写入的文件。请先把要写入的文件拖入左侧目录树。",
+                    "信息",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                IntPtr handle = Rho5Ffi.Open(_dataFolderPath!);
+                try
+                {
+                    foreach ((string internalPath, string sourceFile) in pending)
+                    {
+                        byte[] data = File.ReadAllBytes(sourceFile);
+                        Rho5Ffi.Replace(handle, internalPath, data);
+                    }
+                }
+                finally
+                {
+                    Rho5Ffi.Close(handle);
+                }
+                MessageBox.Show(
+                    $"已通过 P5136_Rust 将 {pending.Count} 个文件写回 rho5 归档。\n" +
+                    "写回的归档文件旁生成了 .bak 备份。",
+                    "保存完成",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"通过 P5136 写入失败: {ex.Message}",
+                    "错误",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -796,19 +852,22 @@ namespace RhoLoader
                 {
                     string fileName = Path.GetFileName(droppedPath);
 
-                    // Check if file with same name already exists in target folder
-                    bool exists = false;
+                    // 同名文件：标记为外部替换文件（保存时经 P5136 写回覆盖）
+                    bool replaced = false;
                     foreach (PackFileInfo existingFile in targetFolder.GetFilesInfo())
                     {
                         if (existingFile.FileName == fileName)
                         {
-                            exists = true;
+                            existingFile.PackFileType = PackFileType.ExternalFile;
+                            existingFile.OriginalFile = droppedPath;
+                            existingFile.FileSize = (int)new FileInfo(droppedPath).Length;
+                            replaced = true;
                             break;
                         }
                     }
-                    if (exists)
+                    if (replaced)
                     {
-                        skippedCount++;
+                        addedCount++;
                         continue;
                     }
 
@@ -1111,6 +1170,7 @@ namespace RhoLoader
             }
             _openedArchives.Clear();
             _openMode = OpenMode.None;
+            _dataFolderPath = null;
         }
         private string FormatDataLength(int length)
         {
